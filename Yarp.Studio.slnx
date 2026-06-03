@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="Playground.Gateway/Playground.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="Yarp.Studio.Core/Yarp.Studio.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/yarp-studio-ui/" />
+</Solution>
