@@ -9,13 +9,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72432a4d-1563-4581-9467-5d844086ccd8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Yarp.Studio.Core/Class1.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Yarp.Studio.Core/Extensions/VisualDesignerApplicationExtensions.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Yarp.Studio.Core/Providers/VisualProxyConfigProvider.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Yarp.Studio.Core/Storage/YarpConfigWrapper.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Yarp.Studio.Core/Yarp.Studio.Core.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Yarp.Studio.slnx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/eslint.config.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/index.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/public/favicon.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/public/icons.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/assets/hero.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/assets/react.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/assets/vite.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/index.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/main.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/tsconfig.app.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/tsconfig.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/tsconfig.node.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/vite.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Yarp.Studio/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Yarp.Studio/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -138,7 +152,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1780509026928</updated>
-      <workItem from="1780509028122" duration="2758000" />
+      <workItem from="1780509028122" duration="4791000" />
     </task>
     <servers />
   </component>
