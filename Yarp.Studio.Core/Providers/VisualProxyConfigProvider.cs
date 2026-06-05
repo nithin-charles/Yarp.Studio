@@ -10,6 +10,92 @@ public class VisualProxyConfigProvider : IProxyConfigProvider
     private readonly string _connectionString;
     private const string CollectionName = "gateway_config";
 
+    static VisualProxyConfigProvider()
+    {
+        ConfigureBsonMapper();
+    }
+
+    private static void ConfigureBsonMapper()
+    {
+        var mapper = BsonMapper.Global;
+
+        // Register custom mapping for read-only lists of YARP types
+        RegisterReadOnlyList<string>(mapper);
+        RegisterReadOnlyList<RouteHeader>(mapper);
+        RegisterReadOnlyList<RouteQueryParameter>(mapper);
+        RegisterReadOnlyList<IReadOnlyDictionary<string, string>>(mapper);
+
+        // Register custom mapping for read-only dictionaries of YARP types
+        RegisterReadOnlyDictionary<string>(mapper);
+        RegisterReadOnlyDictionary<DestinationConfig>(mapper);
+    }
+
+    private static void RegisterReadOnlyList<T>(BsonMapper mapper)
+    {
+        mapper.RegisterType<IReadOnlyList<T>>(
+            serialize: list =>
+            {
+                if (list == null) return BsonValue.Null;
+                var array = new BsonArray();
+                foreach (var item in list)
+                {
+                    array.Add(mapper.Serialize(typeof(T), item));
+                }
+                return array;
+            },
+            deserialize: bson =>
+            {
+                if (bson.IsArray)
+                {
+                    var list = new List<T>();
+                    foreach (var item in bson.AsArray)
+                    {
+                        var val = mapper.Deserialize(typeof(T), item);
+                        if (val is T typedVal)
+                        {
+                            list.Add(typedVal);
+                        }
+                    }
+                    return list;
+                }
+                return new List<T>();
+            }
+        );
+    }
+
+    private static void RegisterReadOnlyDictionary<T>(BsonMapper mapper)
+    {
+        mapper.RegisterType<IReadOnlyDictionary<string, T>>(
+            serialize: dict =>
+            {
+                if (dict == null) return BsonValue.Null;
+                var doc = new BsonDocument();
+                foreach (var kv in dict)
+                {
+                    doc[kv.Key] = mapper.Serialize(typeof(T), kv.Value);
+                }
+                return doc;
+            },
+            deserialize: bson =>
+            {
+                if (bson.IsDocument)
+                {
+                    var dict = new Dictionary<string, T>();
+                    foreach (var kv in bson.AsDocument)
+                    {
+                        var val = mapper.Deserialize(typeof(T), kv.Value);
+                        if (val is T typedVal)
+                        {
+                            dict[kv.Key] = typedVal;
+                        }
+                    }
+                    return dict;
+                }
+                return new Dictionary<string, T>();
+            }
+        );
+    }
+
     public VisualProxyConfigProvider()
     {
         // Resolve our dynamic multi-environment file path string

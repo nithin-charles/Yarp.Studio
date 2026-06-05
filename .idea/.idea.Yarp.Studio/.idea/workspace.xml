@@ -9,27 +9,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72432a4d-1563-4581-9467-5d844086ccd8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/eslint.config.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package-lock.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/public/favicon.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/public/icons.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/assets/hero.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/assets/react.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/assets/vite.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/index.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/main.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/tsconfig.app.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/tsconfig.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/tsconfig.node.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/vite.config.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Yarp.Studio/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Yarp.Studio/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Playground.Gateway/yarp-studio.db" beforeDir="false" afterPath="$PROJECT_DIR$/Playground.Gateway/yarp-studio.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Yarp.Studio.Core/Providers/VisualProxyConfigProvider.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Yarp.Studio.Core/Providers/VisualProxyConfigProvider.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.css" beforeDir="false" afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/yarp-studio-ui/yarp-studio-ui/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,7 +140,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1780509026928</updated>
-      <workItem from="1780509028122" duration="4791000" />
+      <workItem from="1780509028122" duration="12122000" />
     </task>
     <servers />
   </component>
@@ -179,6 +167,19 @@
           <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
           <option name="timeStamp" value="3" />
         </breakpoint>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/Yarp.Studio.Core/Providers/VisualProxyConfigProvider.cs</url>
+          <line>136</line>
+          <properties documentPath="$PROJECT_DIR$/Yarp.Studio.Core/Providers/VisualProxyConfigProvider.cs" containingFunctionPresentation="Method 'LoadInitialConfigFromDatabase'">
+            <startOffsets>
+              <option value="4600" />
+            </startOffsets>
+            <endOffsets>
+              <option value="4662" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
