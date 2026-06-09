@@ -37,12 +37,72 @@ public static class VisualDesignerApplicationExtensions
             });
 
             endpoints.MapPost($"/{baseRoute}/api/save-config",
-                (VisualProxyConfigProvider provider, YarpConfigPayload payload) =>
+                async (VisualProxyConfigProvider provider, Yarp.ReverseProxy.Configuration.IConfigValidator validator, YarpConfigPayload payload) =>
                 {
                     if (payload == null) return Results.BadRequest(new { message = "Malformed payload." });
-                    provider.UpdateRuntimeConfig(payload.Routes, payload.Clusters);
+
+                    var errors = new List<string>();
+
+                    if (payload.Routes != null)
+                    {
+                        foreach (var route in payload.Routes)
+                        {
+                            var routeErrors = await validator.ValidateRouteAsync(route);
+                            if (routeErrors != null && routeErrors.Count > 0)
+                            {
+                                foreach (var err in routeErrors)
+                                {
+                                    errors.Add($"Route '{route.RouteId}': {err.Message}");
+                                }
+                            }
+                        }
+                    }
+
+                    if (payload.Clusters != null)
+                    {
+                        foreach (var cluster in payload.Clusters)
+                        {
+                            var clusterErrors = await validator.ValidateClusterAsync(cluster);
+                            if (clusterErrors != null && clusterErrors.Count > 0)
+                            {
+                                foreach (var err in clusterErrors)
+                                {
+                                    errors.Add($"Cluster '{cluster.ClusterId}': {err.Message}");
+                                }
+                            }
+                        }
+                    }
+
+                    if (errors.Count > 0)
+                    {
+                        return Results.BadRequest(new { success = false, message = "Configuration validation failed.", errors });
+                    }
+
+                    provider.UpdateRuntimeConfig(
+                        payload.Routes ?? new List<RouteConfig>(),
+                        payload.Clusters ?? new List<ClusterConfig>()
+                    );
                     return Results.Ok(new { success = true, message = "Proxy hot-reload executed successfully!" });
                 });
+
+            endpoints.MapGet($"/{baseRoute}/api/status", (Yarp.ReverseProxy.IProxyStateLookup lookup) =>
+            {
+                var clusters = lookup.GetClusters();
+                var status = clusters.Select(c => new
+                {
+                    ClusterId = c.ClusterId,
+                    Destinations = c.Destinations.Select(d => new
+                    {
+                        DestinationId = d.Key,
+                        Address = d.Value.Model?.Config?.Address ?? "",
+                        HealthActive = d.Value.Health.Active.ToString(),
+                        HealthPassive = d.Value.Health.Passive.ToString(),
+                        IsHealthy = d.Value.Health.Active != Yarp.ReverseProxy.Model.DestinationHealth.Unhealthy &&
+                                    d.Value.Health.Passive != Yarp.ReverseProxy.Model.DestinationHealth.Unhealthy
+                    }).ToList()
+                }).ToList();
+                return Results.Ok(status);
+            });
         });
 
         // 2. Conditional UI Asset Handling (The Core One-Time Setup logic)

@@ -19,7 +19,8 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Sun,
-  Moon
+  Moon,
+  PlayCircle
 } from 'lucide-react'
 
 // Import custom UI components
@@ -38,9 +39,12 @@ interface RouteMatch {
   path?: string;
   hosts?: string[];
   methods?: string[];
+  headers?: any[];
+  queryParameters?: any[];
 }
 
 interface RouteConfig {
+  _localId?: string;
   routeId: string;
   match: RouteMatch;
   clusterId?: string;
@@ -48,6 +52,21 @@ interface RouteConfig {
   authorizationPolicy?: string;
   corsPolicy?: string;
   transforms?: Record<string, string>[];
+  [key: string]: any;
+}
+
+interface DestinationConfig {
+  address: string;
+  [key: string]: any;
+}
+
+interface ClusterConfig {
+  _localId?: string;
+  clusterId: string;
+  loadBalancingPolicy?: string;
+  healthCheck?: HealthCheckConfig;
+  destinations?: Record<string, DestinationConfig>;
+  [key: string]: any;
 }
 
 interface ActiveHealthCheck {
@@ -93,7 +112,7 @@ export default function App() {
   }, [theme])
 
   // Navigation & View states
-  const [activeView, setActiveView] = useState<'overview' | 'routes' | 'clusters'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'routes' | 'clusters' | 'playground'>('overview')
   const [activeTab, setActiveTab] = useState<'visual' | 'json'>('visual')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
@@ -106,8 +125,8 @@ export default function App() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
   // Editing state trackers
-  const [editingRouteId, setEditingRouteId] = useState<string | null>(null)
-  const [editingClusterId, setEditingClusterId] = useState<string | null>(null)
+  const [editingRouteLocalId, setEditingRouteLocalId] = useState<string | null>(null)
+  const [editingClusterLocalId, setEditingClusterLocalId] = useState<string | null>(null)
 
   // Form states for Routes
   const [routeForm, setRouteForm] = useState<Partial<RouteConfig>>({
@@ -128,10 +147,47 @@ export default function App() {
   // Destination helper array to hold key-value pairs while editing
   const [destinationInputs, setDestinationInputs] = useState<{ id: string, name: string, address: string }[]>([])
 
-  // Fetch config on mount
+  // Live proxy destination health states
+  interface DestinationStatus {
+    destinationId: string;
+    address: string;
+    healthActive: string;
+    healthPassive: string;
+    isHealthy: boolean;
+  }
+  interface ClusterStatus {
+    clusterId: string;
+    destinations: DestinationStatus[];
+  }
+  const [proxyStatus, setProxyStatus] = useState<ClusterStatus[]>([])
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false)
+
+  // Playground simulation state
+  const [playMethod, setPlayMethod] = useState('GET')
+  const [playPath, setPlayPath] = useState('/api/v1/service')
+  const [playHost, setPlayHost] = useState('localhost')
+  const [playResult, setPlayResult] = useState<any>(null)
+
+  // Fetch config and health status on mount
   useEffect(() => {
     fetchConfig()
+    fetchStatus()
   }, [])
+
+  const fetchStatus = async () => {
+    setIsRefreshingStatus(true)
+    try {
+      const response = await fetch('/yarp-designer/api/status')
+      if (response.ok) {
+        const data = await response.json()
+        setProxyStatus(data)
+      }
+    } catch (err) {
+      console.error('Failed to load proxy status:', err)
+    } finally {
+      setIsRefreshingStatus(false)
+    }
+  }
 
   const fetchConfig = async () => {
     setIsLoading(true)
@@ -142,16 +198,19 @@ export default function App() {
         
         // Normalize backend route & cluster structures to guarantee safe mapping
         const fetchedRoutes = (data.routes || []).map((r: any) => ({
+          ...r,
+          _localId: Math.random().toString(36).slice(2, 9),
           routeId: r.routeId || r.RouteId || '',
           match: {
+            ...r.match,
             path: r.match?.path || r.Match?.Path || '',
             hosts: r.match?.hosts || r.Match?.Hosts || [],
             methods: r.match?.methods || r.Match?.Methods || []
           },
           clusterId: r.clusterId || r.ClusterId || '',
           order: r.order || r.Order,
-          authorizationPolicy: r.authorizationPolicy || r.AuthorizationPolicy,
-          corsPolicy: r.corsPolicy || r.CorsPolicy,
+          authorizationPolicy: r.authorizationPolicy || r.AuthorizationPolicy || '',
+          corsPolicy: r.corsPolicy || r.CorsPolicy || '',
           transforms: r.transforms || r.Transforms || []
         }))
 
@@ -160,16 +219,21 @@ export default function App() {
           const destinations: Record<string, DestinationConfig> = {}
           Object.keys(rawDests).forEach(key => {
             destinations[key] = {
+              ...rawDests[key],
               address: rawDests[key].address || rawDests[key].Address || ''
             }
           })
 
           const activeHc = c.healthCheck?.active || c.HealthCheck?.Active || {}
           return {
+            ...c,
+            _localId: Math.random().toString(36).slice(2, 9),
             clusterId: c.clusterId || c.ClusterId || '',
             loadBalancingPolicy: c.loadBalancingPolicy || c.LoadBalancingPolicy || 'RoundRobin',
             healthCheck: {
+              ...c.healthCheck,
               active: {
+                ...activeHc,
                 enabled: activeHc.enabled || activeHc.Enabled || false,
                 interval: activeHc.interval || activeHc.Interval || '00:00:10',
                 path: activeHc.path || activeHc.Path || '/health',
@@ -201,6 +265,11 @@ export default function App() {
     }
 
     setIsSaving(true)
+
+    // Strip local variables before saving to match backend schemas
+    const cleanedRoutes = routes.map(({ _localId, ...r }) => r)
+    const cleanedClusters = clusters.map(({ _localId, ...c }) => c)
+
     try {
       const response = await fetch('/yarp-designer/api/save-config', {
         method: 'POST',
@@ -208,8 +277,8 @@ export default function App() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          Routes: routes,
-          Clusters: clusters
+          Routes: cleanedRoutes,
+          Clusters: cleanedClusters
         })
       })
 
@@ -218,9 +287,14 @@ export default function App() {
         showNotification('success', result.message || 'Config applied and hot-reloaded successfully!')
         // Reload settings from disk to ensure sync
         fetchConfig()
+        fetchStatus()
       } else {
         const errorData = await response.json().catch(() => ({}))
-        showNotification('error', errorData.message || 'Failed to save configuration.')
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          showNotification('error', `Save failed: ${errorData.errors.join('; ')}`)
+        } else {
+          showNotification('error', errorData.message || 'Failed to save configuration.')
+        }
       }
     } catch (err) {
       console.error(err)
@@ -232,7 +306,7 @@ export default function App() {
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
-    setTimeout(() => setNotification(null), 5000)
+    setTimeout(() => setNotification(null), 7000)
   }
 
   // Reactive Validation Logic
@@ -299,36 +373,143 @@ export default function App() {
     return errors
   }, [routes, clusters])
 
+  const simulateRouting = () => {
+    // 1. Path match helper
+    const matchPath = (template: string, path: string) => {
+      if (!template) return false;
+      const t = template.trim().replace(/\/+$/, '') || '/';
+      const p = path.trim().replace(/\/+$/, '') || '/';
+      if (t === p) return true;
+      
+      // Convert e.g., /api/{id}/{**catchall}
+      let escaped = t.replace(/[.+^${}()|[\]\\]/g, (c) => c === '{' || c === '}' ? c : '\\' + c);
+      escaped = escaped.replace(/\{(\*\*)[a-zA-Z0-9_-]+\}/g, '(.*)');
+      escaped = escaped.replace(/\{[a-zA-Z0-9_-]+\}/g, '([^/]+)');
+      
+      try {
+        const regex = new RegExp('^' + escaped + '$', 'i');
+        return regex.test(p);
+      } catch (e) {
+        return false;
+      }
+    };
+
+    // 2. Find matching route
+    let matchedRoute: RouteConfig | null = null;
+    for (const route of routes) {
+      // Check method match
+      const methods = route.match.methods || [];
+      if (methods.length > 0 && !methods.includes(playMethod)) {
+        continue;
+      }
+
+      // Check host match
+      const hosts = route.match.hosts || [];
+      if (hosts.length > 0) {
+        const hostMatched = hosts.some(h => {
+          if (h.startsWith('*.')) {
+            const suffix = h.slice(2).toLowerCase();
+            return playHost.toLowerCase().endsWith(suffix);
+          }
+          return h.toLowerCase() === playHost.toLowerCase();
+        });
+        if (!hostMatched) continue;
+      }
+
+      // Check path match
+      if (matchPath(route.match.path || '/*', playPath)) {
+        matchedRoute = route;
+        break;
+      }
+    }
+
+    if (!matchedRoute) {
+      setPlayResult({ matched: false });
+      return;
+    }
+
+    // 3. Apply path transforms
+    let transformedPath = playPath;
+    const transformTrace: { name: string; from: string; to: string }[] = [];
+    const addedHeaders: Record<string, string> = {};
+
+    (matchedRoute.transforms || []).forEach(t => {
+      if (t.hasOwnProperty('PathRemovePrefix')) {
+        const prefix = t.PathRemovePrefix;
+        if (transformedPath.startsWith(prefix)) {
+          const original = transformedPath;
+          transformedPath = transformedPath.slice(prefix.length) || '/';
+          transformTrace.push({ name: 'PathRemovePrefix', from: original, to: transformedPath });
+        }
+      } else if (t.hasOwnProperty('PathPrefix')) {
+        const prefix = t.PathPrefix;
+        const original = transformedPath;
+        transformedPath = prefix + (transformedPath.startsWith('/') ? transformedPath : '/' + transformedPath);
+        transformTrace.push({ name: 'PathPrefix', from: original, to: transformedPath });
+      } else if (t.hasOwnProperty('PathSet')) {
+        const pathVal = t.PathSet;
+        const original = transformedPath;
+        transformedPath = pathVal;
+        transformTrace.push({ name: 'PathSet', from: original, to: transformedPath });
+      } else if (t.hasOwnProperty('RequestHeader')) {
+        const headerName = t.RequestHeader;
+        const headerVal = t.Set || '';
+        addedHeaders[headerName] = headerVal;
+      }
+    });
+
+    // 4. Find cluster and destinations
+    const matchedCluster = clusters.find(c => c.clusterId === matchedRoute!.clusterId);
+    const liveClusterStatus = proxyStatus.find(s => s.clusterId === matchedRoute!.clusterId);
+
+    setPlayResult({
+      matched: true,
+      route: matchedRoute,
+      transformedPath,
+      transformTrace,
+      addedHeaders,
+      cluster: matchedCluster,
+      liveStatus: liveClusterStatus
+    });
+  };
+
   // --- Route Handlers ---
   const handleAddRoute = () => {
     const tempId = `route-${Date.now().toString().slice(-4)}`
     const newRoute: RouteConfig = {
+      _localId: Math.random().toString(36).slice(2, 9),
       routeId: tempId,
-      match: { path: '/api/v1/service', methods: ['GET'] },
+      match: { path: '/api/v1/service', methods: ['GET'], hosts: [] },
       clusterId: clusters[0]?.clusterId || '',
-      transforms: []
+      transforms: [],
+      authorizationPolicy: '',
+      corsPolicy: ''
     }
-    setRoutes([...routes, newRoute])
     handleEditRoute(newRoute)
   }
 
   const handleEditRoute = (route: RouteConfig) => {
-    setEditingRouteId(route.routeId)
+    setEditingRouteLocalId(route._localId || null)
     setRouteForm({ ...route })
   }
 
   const handleSaveRouteForm = () => {
     if (!routeForm.routeId || routeForm.routeId.trim() === '') return
 
-    const updatedRoutes = routes.map(r => r.routeId === editingRouteId ? (routeForm as RouteConfig) : r)
-    setRoutes(updatedRoutes)
-    setEditingRouteId(null)
+    const exists = routes.some(r => r._localId === editingRouteLocalId)
+    if (exists) {
+      const updatedRoutes = routes.map(r => r._localId === editingRouteLocalId ? (routeForm as RouteConfig) : r)
+      setRoutes(updatedRoutes)
+    } else {
+      setRoutes([...routes, routeForm as RouteConfig])
+    }
+    setEditingRouteLocalId(null)
   }
 
-  const handleDeleteRoute = (routeId: string) => {
-    setRoutes(routes.filter(r => r.routeId !== routeId))
-    if (editingRouteId === routeId) {
-      setEditingRouteId(null)
+  const handleDeleteRoute = (localId: string) => {
+    setRoutes(routes.filter(r => r._localId !== localId))
+    if (editingRouteLocalId === localId) {
+      setEditingRouteLocalId(null)
     }
   }
 
@@ -362,10 +543,18 @@ export default function App() {
       newTransform = { 'PathRemovePrefix': '/api' }
     } else if (type === 'PathPrefix') {
       newTransform = { 'PathPrefix': '/v1' }
+    } else if (type === 'PathSet') {
+      newTransform = { 'PathSet': '/new-path' }
     } else if (type === 'RequestHeaderAdd') {
       newTransform = { 'RequestHeader': 'X-Custom-Header', 'Set': 'CustomValue' }
+    } else if (type === 'ResponseHeader') {
+      newTransform = { 'ResponseHeader': 'X-Custom-Response', 'Set': 'Value', 'When': 'Always' }
+    } else if (type === 'QueryParameter') {
+      newTransform = { 'QueryParameter': 'debug', 'Set': 'true' }
     } else if (type === 'X-Forwarded-Host') {
       newTransform = { 'X-Forwarded': 'Set', 'Prefix': 'true' }
+    } else if (type === 'Custom') {
+      newTransform = { 'CustomKey': 'CustomValue' }
     }
 
     setRouteForm({
@@ -399,6 +588,7 @@ export default function App() {
   const handleAddCluster = () => {
     const tempId = `cluster-${Date.now().toString().slice(-4)}`
     const newCluster: ClusterConfig = {
+      _localId: Math.random().toString(36).slice(2, 9),
       clusterId: tempId,
       loadBalancingPolicy: 'RoundRobin',
       healthCheck: { active: { enabled: false, interval: '00:00:10', path: '/health' } },
@@ -406,12 +596,11 @@ export default function App() {
         'dest-1': { address: 'http://localhost:5001' }
       }
     }
-    setClusters([...clusters, newCluster])
     handleEditCluster(newCluster)
   }
 
   const handleEditCluster = (cluster: ClusterConfig) => {
-    setEditingClusterId(cluster.clusterId)
+    setEditingClusterLocalId(cluster._localId || null)
     setClusterForm({ ...cluster })
     
     // Map destinations dictionary to standard array list for simple binding
@@ -438,21 +627,29 @@ export default function App() {
       destinations: compiledDests
     } as ClusterConfig
 
-    const updatedClusters = clusters.map(c => c.clusterId === editingClusterId ? updatedCluster : c)
-    setClusters(updatedClusters)
-    
-    // Propagate ID change down to routes targeting this cluster if changed
-    if (editingClusterId !== clusterForm.clusterId) {
-      setRoutes(routes.map(r => r.clusterId === editingClusterId ? { ...r, clusterId: clusterForm.clusterId } : r))
+    const targetCluster = clusters.find(c => c._localId === editingClusterLocalId)
+    const oldClusterId = targetCluster?.clusterId;
+
+    const exists = clusters.some(c => c._localId === editingClusterLocalId)
+    if (exists) {
+      const updatedClusters = clusters.map(c => c._localId === editingClusterLocalId ? updatedCluster : c)
+      setClusters(updatedClusters)
+    } else {
+      setClusters([...clusters, updatedCluster])
     }
     
-    setEditingClusterId(null)
+    // Propagate ID change down to routes targeting this cluster if changed
+    if (oldClusterId && oldClusterId !== clusterForm.clusterId) {
+      setRoutes(routes.map(r => r.clusterId === oldClusterId ? { ...r, clusterId: clusterForm.clusterId } : r))
+    }
+    
+    setEditingClusterLocalId(null)
   }
 
-  const handleDeleteCluster = (clusterId: string) => {
-    setClusters(clusters.filter(c => c.clusterId !== clusterId))
-    if (editingClusterId === clusterId) {
-      setEditingClusterId(null)
+  const handleDeleteCluster = (localId: string) => {
+    setClusters(clusters.filter(c => c._localId !== localId))
+    if (editingClusterLocalId === localId) {
+      setEditingClusterLocalId(null)
     }
   }
 
@@ -498,6 +695,19 @@ export default function App() {
         </div>
         
         <div className="flex items-center space-x-3">
+          {/* Refresh Health Button */}
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={fetchStatus}
+            disabled={isRefreshingStatus}
+            className="text-xs h-9 border-slate-200 dark:border-slate-800"
+            title="Refresh Live Destination Health Check Probe Statuses"
+          >
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isRefreshingStatus ? 'animate-spin' : ''}`} />
+            Refresh Health
+          </Button>
+
           {/* Theme Switcher Toggle */}
           <div className="flex h-9 items-center space-x-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 shadow-sm">
             <Sun className={`h-3.5 w-3.5 transition-colors ${theme === 'light' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`} />
@@ -565,7 +775,7 @@ export default function App() {
             )}
             <nav className={`mt-2 ${isSidebarCollapsed ? 'space-y-3' : 'space-y-1'}`}>
               <Button 
-                onClick={() => { setActiveView('overview'); setEditingRouteId(null); setEditingClusterId(null); }}
+                onClick={() => { setActiveView('overview'); setEditingRouteLocalId(null); setEditingClusterLocalId(null); }}
                 variant={activeView === 'overview' ? 'secondary' : 'ghost'} 
                 className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10' : 'justify-start text-left'}`}
                 title="Overview Map"
@@ -574,7 +784,7 @@ export default function App() {
                 {!isSidebarCollapsed && <span>Overview Map</span>}
               </Button>
               <Button 
-                onClick={() => { setActiveView('routes'); setEditingRouteId(null); setEditingClusterId(null); }}
+                onClick={() => { setActiveView('routes'); setEditingRouteLocalId(null); setEditingClusterLocalId(null); }}
                 variant={activeView === 'routes' ? 'secondary' : 'ghost'} 
                 className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10 relative' : 'justify-start text-left'}`}
                 title="Routes"
@@ -595,7 +805,7 @@ export default function App() {
                 )}
               </Button>
               <Button 
-                onClick={() => { setActiveView('clusters'); setEditingRouteId(null); setEditingClusterId(null); }}
+                onClick={() => { setActiveView('clusters'); setEditingRouteLocalId(null); setEditingClusterLocalId(null); }}
                 variant={activeView === 'clusters' ? 'secondary' : 'ghost'} 
                 className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10 relative' : 'justify-start text-left'}`}
                 title="Clusters"
@@ -614,6 +824,15 @@ export default function App() {
                 {isSidebarCollapsed && clusters.length > 0 && (
                   <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 )}
+              </Button>
+              <Button 
+                onClick={() => { setActiveView('playground'); setEditingRouteLocalId(null); setEditingClusterLocalId(null); }}
+                variant={activeView === 'playground' ? 'secondary' : 'ghost'} 
+                className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10' : 'justify-start text-left'}`}
+                title="Routing Playground"
+              >
+                <PlayCircle className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-rose-500`} />
+                {!isSidebarCollapsed && <span>Routing Playground</span>}
               </Button>
             </nav>
             
@@ -661,6 +880,195 @@ export default function App() {
           
           <div className="flex-1 flex flex-col overflow-y-auto p-8 space-y-8">
             
+            {/* View D: Routing Playground */}
+            {activeView === 'playground' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routing Playground</h1>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Simulate incoming gateway requests and visually trace how YARP matches routes, executes transforms, and selects destinations.</p>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+                  
+                  {/* Left Column: Request inputs */}
+                  <Card className="border-slate-200 dark:border-slate-800 shadow-md">
+                    <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-900 p-5">
+                      <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500">Simulate Request</CardTitle>
+                      <CardDescription>Enter test values to run against loaded proxy routes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-5 space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">HTTP Method</label>
+                        <Select 
+                          value={playMethod} 
+                          onChange={(e) => setPlayMethod(e.target.value)}
+                        >
+                          <option value="GET">GET</option>
+                          <option value="POST">POST</option>
+                          <option value="PUT">PUT</option>
+                          <option value="DELETE">DELETE</option>
+                          <option value="PATCH">PATCH</option>
+                          <option value="OPTIONS">OPTIONS</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">Request Path</label>
+                        <Input 
+                          type="text" 
+                          value={playPath} 
+                          onChange={(e) => setPlayPath(e.target.value)}
+                          placeholder="/api/v1/auth/login" 
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">Host Header</label>
+                        <Input 
+                          type="text" 
+                          value={playHost} 
+                          onChange={(e) => setPlayHost(e.target.value)}
+                          placeholder="localhost" 
+                        />
+                      </div>
+
+                      <Button 
+                        onClick={simulateRouting} 
+                        className="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium shadow-md shadow-rose-600/10"
+                      >
+                        Run Trace
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Right Column: Trace result */}
+                  <Card className="border-slate-200 dark:border-slate-800 shadow-md">
+                    <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-900 p-5">
+                      <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500">Trace Results</CardTitle>
+                      <CardDescription>Evaluation matching pipeline results.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-5">
+                      {!playResult ? (
+                        <div className="text-center py-12 text-slate-400 text-sm">
+                          Click "Run Trace" to evaluate request parameters.
+                        </div>
+                      ) : !playResult.matched ? (
+                        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-lg p-5 flex items-start space-x-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="text-sm font-bold text-red-800 dark:text-red-400">404 - Not Matched</h4>
+                            <p className="text-xs text-red-600 dark:text-red-500 mt-1 leading-relaxed">
+                              No route matches the specified criteria. Check path catch-alls, host qualifiers, and allowed HTTP methods.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-5">
+                          {/* Match Info */}
+                          <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-4 flex items-start space-x-3">
+                            <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                            <div>
+                              <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Successfully Matched</h4>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-mono">
+                                Matched Route: <span className="font-bold text-indigo-600 dark:text-indigo-400">{playResult.route.routeId}</span>
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1 font-mono">
+                                Pattern: {playResult.route.match.path || '/*'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Transform Trace */}
+                          <div>
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Transform Output</h4>
+                            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-md p-3.5 space-y-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                              <div>
+                                <span className="text-slate-400">Original Path:</span> {playPath}
+                              </div>
+                              {playResult.transformTrace.length > 0 ? (
+                                <div className="space-y-1.5 pt-1.5 border-t border-slate-200/50 dark:border-slate-800/80">
+                                  {playResult.transformTrace.map((t: any, i: number) => (
+                                    <div key={i} className="flex items-center space-x-1.5">
+                                      <Badge variant="outline" className="text-[10px] scale-90">{t.name}</Badge>
+                                      <span>{t.from}</span>
+                                      <ArrowRight className="h-3 w-3 text-slate-400" />
+                                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{t.to}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-200/50 dark:border-slate-800/80">
+                                  No path transformations applied.
+                                </div>
+                              )}
+                              <div>
+                                <span className="text-slate-400">Forwarded Path:</span> <span className="font-bold text-emerald-600 dark:text-emerald-400">{playResult.transformedPath}</span>
+                              </div>
+                              {Object.keys(playResult.addedHeaders).length > 0 && (
+                                <div className="pt-2.5 border-t border-slate-200/50 dark:border-slate-800/80 space-y-1">
+                                  <span className="text-slate-400">Injected Headers:</span>
+                                  {Object.entries(playResult.addedHeaders).map(([k, v]: any) => (
+                                    <div key={k} className="text-[11px]">
+                                      <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{k}</span>: {v}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Target Cluster and Health */}
+                          <div>
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Target Cluster Dispatch</h4>
+                            {playResult.cluster ? (
+                              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-md p-3.5 space-y-3">
+                                <div className="flex items-center justify-between text-xs font-mono">
+                                  <div>
+                                    <span className="text-slate-400">Cluster:</span> <span className="font-bold text-slate-700 dark:text-slate-300">{playResult.cluster.clusterId}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400">LB Policy:</span> {playResult.cluster.loadBalancingPolicy}
+                                  </div>
+                                </div>
+                                <div className="space-y-1.5 pt-2 border-t border-slate-200/50 dark:border-slate-800/80">
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Destination endpoints:</span>
+                                  {Object.entries(playResult.cluster.destinations || {}).map(([key, val]: any) => {
+                                    const liveDest = playResult.liveStatus?.destinations?.find((d: any) => d.destinationId === key);
+                                    const healthStr = liveDest ? liveDest.healthActive : 'Unknown';
+                                    const isHealthy = liveDest ? liveDest.isHealthy : true;
+                                    return (
+                                      <div key={key} className="flex items-center justify-between bg-white dark:bg-slate-950 px-2.5 py-1.5 rounded border border-slate-200/50 dark:border-slate-800/50 text-xs font-mono">
+                                        <div className="flex items-center space-x-2">
+                                          <span className={`h-1.5 w-1.5 rounded-full ${
+                                            healthStr === 'Healthy' ? 'bg-emerald-500' :
+                                            healthStr === 'Unhealthy' ? 'bg-red-500' :
+                                            'bg-slate-400'
+                                          }`} />
+                                          <span className="font-bold text-slate-700 dark:text-slate-300">{key}</span>
+                                          <span className="text-[10px] text-slate-400">({val.address})</span>
+                                        </div>
+                                        <Badge variant={isHealthy ? 'success' : 'destructive'} className="text-[9px] py-0 font-medium">
+                                          {healthStr}
+                                        </Badge>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-red-500 bg-red-50 dark:bg-red-950/10 p-3 rounded border border-red-200/50 font-mono">
+                                Route targets cluster "{playResult.route.clusterId}" but it is not configured in Cluster Manager!
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
             {/* View A: Overview Dashboard (Topology View) */}
             {activeView === 'overview' && (
               <div className="space-y-6">
@@ -774,6 +1182,29 @@ export default function App() {
                                   </Badge>
                                 )}
                               </div>
+
+                              {/* Live health status list */}
+                              {(() => {
+                                const statusInfo = proxyStatus.find(s => s.clusterId === c.clusterId)
+                                if (!statusInfo) return null
+                                return (
+                                  <div className="mt-3.5 pt-2 border-t border-slate-100 dark:border-slate-900/50 flex flex-col space-y-1.5">
+                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Destination Health:</span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {statusInfo.destinations.map(d => (
+                                        <div key={d.destinationId} className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 text-[10px] font-mono" title={`${d.address}: Active=${d.healthActive}, Passive=${d.healthPassive}`}>
+                                          <span className={`h-1.5 w-1.5 rounded-full ${
+                                            d.healthActive === 'Healthy' ? 'bg-emerald-500 animate-pulse' :
+                                            d.healthActive === 'Unhealthy' ? 'bg-red-500' :
+                                            'bg-slate-400'
+                                          }`} />
+                                          <span className="text-slate-600 dark:text-slate-300 font-medium">{d.destinationId}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </CardHeader>
                             {targetRoutes.length > 0 && (
                               <CardFooter className="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-900 text-xs flex flex-col items-start">
@@ -805,7 +1236,7 @@ export default function App() {
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Cluster Manager</h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm">Define target endpoint instances, set up load balancing distributions, and configure health probing.</p>
                   </div>
-                  {editingClusterId === null && (
+                  {editingClusterLocalId === null && (
                     <Button onClick={handleAddCluster} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Cluster
@@ -814,18 +1245,18 @@ export default function App() {
                 </div>
 
                 {/* Edit Cluster Panel */}
-                {editingClusterId !== null ? (
+                {editingClusterLocalId !== null ? (
                   <Card className="border-indigo-200 dark:border-indigo-900/50 shadow-md">
                     <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-900 p-6">
                       <div className="flex items-center justify-between">
                         <div>
                           <CardTitle className="text-base text-slate-900 dark:text-slate-100">
-                            Editing Cluster: <span className="font-mono text-indigo-600 dark:text-indigo-400">{editingClusterId}</span>
+                            Editing Cluster: <span className="font-mono text-indigo-600 dark:text-indigo-400">{clusterForm.clusterId}</span>
                           </CardTitle>
                           <CardDescription>Update load balancing settings, destination instances, and health checks.</CardDescription>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" onClick={() => setEditingClusterId(null)}>Cancel</Button>
+                          <Button variant="outline" onClick={() => setEditingClusterLocalId(null)}>Cancel</Button>
                           <Button onClick={handleSaveClusterForm} className="bg-indigo-600 hover:bg-indigo-700 text-white">Save Changes</Button>
                         </div>
                       </div>
@@ -998,17 +1429,18 @@ export default function App() {
                     <Table>
                       <TableHeader className="bg-slate-50 dark:bg-slate-950">
                         <TableRow>
-                          <TableHead className="w-1/4">Cluster ID</TableHead>
+                          <TableHead className="w-1/5">Cluster ID</TableHead>
                           <TableHead>Policy</TableHead>
                           <TableHead>Probing</TableHead>
                           <TableHead>Destinations</TableHead>
+                          <TableHead>Health Status</TableHead>
                           <TableHead className="text-right w-32">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {clusters.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-slate-400 text-sm">
+                            <TableCell colSpan={6} className="text-center py-8 text-slate-400 text-sm">
                               No clusters configured. Click "Add Cluster" above to begin.
                             </TableCell>
                           </TableRow>
@@ -1016,7 +1448,7 @@ export default function App() {
                           clusters.map((c) => {
                             const destKeys = Object.keys(c.destinations || {})
                             return (
-                              <TableRow key={c.clusterId} className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30" onClick={() => handleEditCluster(c)}>
+                              <TableRow key={c._localId} className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30" onClick={() => handleEditCluster(c)}>
                                 <TableCell className="font-mono font-bold text-slate-900 dark:text-slate-100">{c.clusterId}</TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="font-mono text-xs">{c.loadBalancingPolicy}</Badge>
@@ -1043,10 +1475,44 @@ export default function App() {
                                     )}
                                   </div>
                                 </TableCell>
+                                <TableCell>
+                                  {(() => {
+                                    const statusInfo = proxyStatus.find(s => s.clusterId === c.clusterId)
+                                    if (!statusInfo) return <span className="text-xs text-slate-400 font-mono">Unknown</span>
+                                    const healthyCount = statusInfo.destinations.filter(d => d.isHealthy).length
+                                    const totalCount = statusInfo.destinations.length
+                                    return (
+                                      <div className="flex flex-col space-y-1">
+                                        <Badge 
+                                          className={`text-[10px] w-fit font-semibold ${
+                                            healthyCount === totalCount ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30' :
+                                            healthyCount > 0 ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30' :
+                                            'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30'
+                                          }`}
+                                        >
+                                          {healthyCount}/{totalCount} Healthy
+                                        </Badge>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {statusInfo.destinations.map(d => (
+                                            <span 
+                                              key={d.destinationId} 
+                                              className={`h-2 w-2 rounded-full inline-block ${
+                                                d.healthActive === 'Healthy' ? 'bg-emerald-500' :
+                                                d.healthActive === 'Unhealthy' ? 'bg-red-500' :
+                                                'bg-slate-400'
+                                              }`} 
+                                              title={`${d.destinationId} (${d.address}): Active=${d.healthActive}, Passive=${d.healthPassive}`}
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )
+                                  })()}
+                                </TableCell>
                                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex justify-end space-x-2">
                                     <Button variant="outline" size="sm" onClick={() => handleEditCluster(c)}>Edit</Button>
-                                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteCluster(c.clusterId)}>
+                                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteCluster(c._localId || '')}>
                                       <Trash className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
@@ -1070,7 +1536,7 @@ export default function App() {
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Route Builder</h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm">Define matcher patterns to match incoming requests, configure transform pipelines, and dispatch traffic to target clusters.</p>
                   </div>
-                  {editingRouteId === null && (
+                  {editingRouteLocalId === null && (
                     <Button onClick={handleAddRoute} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Route
@@ -1079,18 +1545,18 @@ export default function App() {
                 </div>
 
                 {/* Edit Route Panel */}
-                {editingRouteId !== null ? (
+                {editingRouteLocalId !== null ? (
                   <Card className="border-indigo-200 dark:border-indigo-900/50 shadow-md">
                     <CardHeader className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-900 p-6">
                       <div className="flex items-center justify-between">
                         <div>
                           <CardTitle className="text-base text-slate-900 dark:text-slate-100">
-                            Editing Route: <span className="font-mono text-indigo-600 dark:text-indigo-400">{editingRouteId}</span>
+                            Editing Route: <span className="font-mono text-indigo-600 dark:text-indigo-400">{routeForm.routeId}</span>
                           </CardTitle>
                           <CardDescription>Define how YARP matches incoming URLs and what modifications it applies before proxying.</CardDescription>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" onClick={() => setEditingRouteId(null)}>Cancel</Button>
+                          <Button variant="outline" onClick={() => setEditingRouteLocalId(null)}>Cancel</Button>
                           <Button onClick={handleSaveRouteForm} className="bg-indigo-600 hover:bg-indigo-700 text-white">Save Changes</Button>
                         </div>
                       </div>
@@ -1129,6 +1595,25 @@ export default function App() {
                           </div>
 
                           <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Host Matcher (Comma-separated)</label>
+                            <Input 
+                              type="text" 
+                              value={routeForm.match?.hosts?.join(', ') || ''} 
+                              onChange={(e) => {
+                                const hostsArr = e.target.value.split(',').map(h => h.trim()).filter(h => h !== '')
+                                setRouteForm({
+                                  ...routeForm,
+                                  match: { ...routeForm.match, hosts: hostsArr }
+                                })
+                              }}
+                              placeholder="e.g. example.com, api.example.com" 
+                            />
+                            <p className="text-[11px] text-slate-400 mt-1">
+                              Match requests by Host headers. If empty, all hosts will match.
+                            </p>
+                          </div>
+
+                          <div>
                             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Target Cluster ID</label>
                             <Select 
                               value={routeForm.clusterId || ''} 
@@ -1142,6 +1627,33 @@ export default function App() {
                             <p className="text-[11px] text-slate-400 mt-1">
                               Select a cluster to route requests to. Must be populated from the Cluster Manager.
                             </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Authorization Policy</label>
+                              <Input 
+                                type="text" 
+                                value={routeForm.authorizationPolicy || ''} 
+                                onChange={(e) => setRouteForm({ ...routeForm, authorizationPolicy: e.target.value })}
+                                placeholder="e.g. Default" 
+                              />
+                              <p className="text-[11px] text-slate-400 mt-1">
+                                Policy name registered in application.
+                              </p>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">CORS Policy</label>
+                              <Input 
+                                type="text" 
+                                value={routeForm.corsPolicy || ''} 
+                                onChange={(e) => setRouteForm({ ...routeForm, corsPolicy: e.target.value })}
+                                placeholder="e.g. AllowAll" 
+                              />
+                              <p className="text-[11px] text-slate-400 mt-1">
+                                Policy name registered in application.
+                              </p>
+                            </div>
                           </div>
 
                           <div>
@@ -1179,15 +1691,19 @@ export default function App() {
                               onChange={(e) => {
                                 if (e.target.value !== "") {
                                   handleAddTransform(e.target.value)
-                                  e.target.value = "" // Reset select element
+                                  e.target.value = "" // Reset select
                                 }
                               }}
                             >
                               <option value="">+ Add Transform Rule</option>
                               <option value="PathRemovePrefix">PathRemovePrefix</option>
                               <option value="PathPrefix">PathPrefix</option>
+                              <option value="PathSet">PathSet</option>
                               <option value="RequestHeaderAdd">RequestHeaderAdd</option>
+                              <option value="ResponseHeader">ResponseHeader</option>
+                              <option value="QueryParameter">QueryParameter</option>
                               <option value="X-Forwarded-Host">X-Forwarded-Host</option>
+                              <option value="Custom">Custom Key-Value</option>
                             </Select>
                           </div>
 
@@ -1199,7 +1715,7 @@ export default function App() {
                             ) : (
                               routeForm.transforms.map((t, idx) => {
                                 
-                                // Determine type
+                                // PathRemovePrefix
                                 if (t.hasOwnProperty('PathRemovePrefix')) {
                                   return (
                                     <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
@@ -1222,6 +1738,7 @@ export default function App() {
                                   )
                                 }
 
+                                // PathPrefix
                                 if (t.hasOwnProperty('PathPrefix')) {
                                   return (
                                     <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
@@ -1244,6 +1761,30 @@ export default function App() {
                                   )
                                 }
 
+                                // PathSet
+                                if (t.hasOwnProperty('PathSet')) {
+                                  return (
+                                    <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
+                                      <div className="flex items-center justify-between">
+                                        <Badge variant="outline" className="text-[10px] font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20">PathSet</Badge>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
+                                          <Trash className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <label className="text-[10px] font-semibold text-slate-500">Path Value</label>
+                                        <Input 
+                                          type="text" 
+                                          value={t.PathSet || ''} 
+                                          onChange={(e) => handleUpdateTransformValue(idx, 'PathSet', e.target.value)}
+                                          className="h-8 text-xs font-mono"
+                                        />
+                                      </div>
+                                    </div>
+                                  )
+                                }
+
+                                // RequestHeaderAdd
                                 if (t.hasOwnProperty('RequestHeader')) {
                                   return (
                                     <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
@@ -1277,6 +1818,87 @@ export default function App() {
                                   )
                                 }
 
+                                // ResponseHeader
+                                if (t.hasOwnProperty('ResponseHeader')) {
+                                  return (
+                                    <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
+                                      <div className="flex items-center justify-between">
+                                        <Badge variant="outline" className="text-[10px] font-mono text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/20">ResponseHeader</Badge>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
+                                          <Trash className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-2">
+                                        <div className="space-y-1">
+                                          <label className="text-[10px] font-semibold text-slate-500">Header</label>
+                                          <Input 
+                                            type="text" 
+                                            value={t.ResponseHeader || ''} 
+                                            onChange={(e) => handleUpdateTransformValue(idx, 'ResponseHeader', e.target.value)}
+                                            className="h-8 text-xs font-mono"
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-[10px] font-semibold text-slate-500">Value</label>
+                                          <Input 
+                                            type="text" 
+                                            value={t.Set || ''} 
+                                            onChange={(e) => handleUpdateTransformValue(idx, 'Set', e.target.value)}
+                                            className="h-8 text-xs font-mono"
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-[10px] font-semibold text-slate-500">When</label>
+                                          <Select 
+                                            value={t.When || 'Always'} 
+                                            onChange={(e) => handleUpdateTransformValue(idx, 'When', e.target.value)}
+                                            className="h-8 text-xs font-mono"
+                                          >
+                                            <option value="Always">Always</option>
+                                            <option value="Success">Success</option>
+                                            <option value="Failure">Failure</option>
+                                          </Select>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                }
+
+                                // QueryParameter
+                                if (t.hasOwnProperty('QueryParameter')) {
+                                  return (
+                                    <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
+                                      <div className="flex items-center justify-between">
+                                        <Badge variant="outline" className="text-[10px] font-mono text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/20">QueryParameter</Badge>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
+                                          <Trash className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1">
+                                          <label className="text-[10px] font-semibold text-slate-500">Param Key</label>
+                                          <Input 
+                                            type="text" 
+                                            value={t.QueryParameter || ''} 
+                                            onChange={(e) => handleUpdateTransformValue(idx, 'QueryParameter', e.target.value)}
+                                            className="h-8 text-xs font-mono"
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-[10px] font-semibold text-slate-500">Value (Set)</label>
+                                          <Input 
+                                            type="text" 
+                                            value={t.Set || ''} 
+                                            onChange={(e) => handleUpdateTransformValue(idx, 'Set', e.target.value)}
+                                            className="h-8 text-xs font-mono"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                }
+
+                                // X-Forwarded
                                 if (t.hasOwnProperty('X-Forwarded')) {
                                   return (
                                     <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
@@ -1311,7 +1933,73 @@ export default function App() {
                                   )
                                 }
 
-                                return null
+                                // Unrecognized/Generic Transform Key-Value Grid
+                                return (
+                                  <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative animate-fade-in">
+                                    <div className="flex items-center justify-between">
+                                      <Badge variant="outline" className="text-[10px] font-mono text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800">Custom/Generic</Badge>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
+                                        <Trash className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {Object.entries(t).map(([k, v]) => (
+                                        <div key={k} className="flex items-center space-x-2">
+                                          <Input 
+                                            type="text" 
+                                            placeholder="Key" 
+                                            value={k}
+                                            onChange={(e) => {
+                                              const newKey = e.target.value;
+                                              const currentTransforms = [...(routeForm.transforms || [])]
+                                              const currentItem = { ...currentTransforms[idx] }
+                                              delete currentItem[k]
+                                              currentItem[newKey] = v
+                                              currentTransforms[idx] = currentItem
+                                              setRouteForm({ ...routeForm, transforms: currentTransforms })
+                                            }}
+                                            className="h-8 text-xs font-mono w-1/2"
+                                          />
+                                          <Input 
+                                            type="text" 
+                                            placeholder="Value" 
+                                            value={v}
+                                            onChange={(e) => handleUpdateTransformValue(idx, k, e.target.value)}
+                                            className="h-8 text-xs font-mono w-1/2"
+                                          />
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-6 w-6 text-slate-400 hover:text-red-500" 
+                                            onClick={() => {
+                                              const currentTransforms = [...(routeForm.transforms || [])]
+                                              const currentItem = { ...currentTransforms[idx] }
+                                              delete currentItem[k]
+                                              currentTransforms[idx] = currentItem
+                                              setRouteForm({ ...routeForm, transforms: currentTransforms })
+                                            }}
+                                          >
+                                            <Trash className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="text-[10px] h-6 py-0 px-2 border-slate-200 dark:border-slate-800"
+                                        onClick={() => {
+                                          const currentTransforms = [...(routeForm.transforms || [])]
+                                          const currentItem = { ...currentTransforms[idx] }
+                                          currentItem[`NewKey-${Math.random().toString(36).slice(2, 5)}`] = ''
+                                          currentTransforms[idx] = currentItem
+                                          setRouteForm({ ...routeForm, transforms: currentTransforms })
+                                        }}
+                                      >
+                                        + Add Field
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )
                               })
                             )}
                           </div>
@@ -1343,7 +2031,7 @@ export default function App() {
                           </TableRow>
                         ) : (
                           routes.map((r) => (
-                            <TableRow key={r.routeId} className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30" onClick={() => handleEditRoute(r)}>
+                            <TableRow key={r._localId} className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30" onClick={() => handleEditRoute(r)}>
                               <TableCell className="font-mono font-bold text-slate-900 dark:text-slate-100">{r.routeId}</TableCell>
                               <TableCell className="font-mono text-slate-700 dark:text-slate-300 font-semibold">{r.match.path || '/*'}</TableCell>
                               <TableCell>
@@ -1367,7 +2055,7 @@ export default function App() {
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
                                   {(r.transforms && r.transforms.length > 0) ? r.transforms.map((t, index) => (
-                                    <Badge key={index} variant="outline" className="text-[10px] font-mono border-slate-200 bg-white">
+                                    <Badge key={index} variant="outline" className="text-[10px] font-mono border-slate-200 bg-white dark:bg-slate-800">
                                       {Object.keys(t)[0]}
                                     </Badge>
                                   )) : (
@@ -1378,7 +2066,7 @@ export default function App() {
                               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end space-x-2">
                                   <Button variant="outline" size="sm" onClick={() => handleEditRoute(r)}>Edit</Button>
-                                  <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteRoute(r.routeId)}>
+                                  <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteRoute(r._localId || '')}>
                                     <Trash className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
