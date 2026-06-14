@@ -178,19 +178,21 @@ export const RouteBuilderTab: React.FC = () => {
               {/* Left Sub-form: Match criteria & Target */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Route ID</label>
+                  <label htmlFor="route-form-id" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Route ID</label>
                   <Input 
+                    id="route-form-id"
                     type="text" 
                     value={routeForm.routeId || ''} 
                     onChange={(e) => setRouteForm({ ...routeForm, routeId: e.target.value })}
                     placeholder="e.g. auth-route" 
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">Unique identifier string for this route rule definition.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Unique identifier string for this route rule definition.</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Path Matcher Pattern</label>
+                  <label htmlFor="route-form-path" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Path Matcher Pattern</label>
                   <Input 
+                    id="route-form-path"
                     type="text" 
                     value={routeForm.match?.path || ''} 
                     onChange={(e) => setRouteForm({
@@ -199,14 +201,15 @@ export const RouteBuilderTab: React.FC = () => {
                     })}
                     placeholder="e.g. /api/v1/auth/{**catch-all}" 
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                     Relative request path matching. Use <span className="font-mono font-bold">{`{**catch-all}`}</span> for wildcard nesting.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Host Matcher (Comma-separated)</label>
+                  <label htmlFor="route-form-hosts" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Host Matcher (Comma-separated)</label>
                   <Input 
+                    id="route-form-hosts"
                     type="text" 
                     value={routeForm.match?.hosts?.join(', ') || ''} 
                     onChange={(e) => {
@@ -218,13 +221,14 @@ export const RouteBuilderTab: React.FC = () => {
                     }}
                     placeholder="e.g. example.com, api.example.com" 
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                     Match requests by Host headers. If empty, all hosts will match.
                   </p>
                 </div>
 
+
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">HTTP Methods</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">HTTP Methods</label>
                   <div className="flex flex-wrap gap-2">
                     {['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'].map((m) => {
                       const active = routeForm.match?.methods?.includes(m)
@@ -236,19 +240,21 @@ export const RouteBuilderTab: React.FC = () => {
                           size="sm"
                           onClick={() => handleAddMethodToRoute(m)}
                           className="text-xs h-8"
+                          aria-pressed={active}
                         >
                           {m}
                         </Button>
                       )
                     })}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5">Select specific HTTP verbs. If none selected, any method is accepted.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">Select specific HTTP verbs. If none selected, any method is accepted.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Authorization Policy</label>
+                    <label htmlFor="route-form-auth" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Authorization Policy</label>
                     <Select 
+                      id="route-form-auth"
                       value={routeForm.authorizationPolicy || ''} 
                       onChange={(e) => setRouteForm({ ...routeForm, authorizationPolicy: e.target.value })}
                     >
@@ -258,8 +264,9 @@ export const RouteBuilderTab: React.FC = () => {
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">CORS Policy</label>
+                    <label htmlFor="route-form-cors" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">CORS Policy</label>
                     <Select 
+                      id="route-form-cors"
                       value={routeForm.corsPolicy || ''} 
                       onChange={(e) => setRouteForm({ ...routeForm, corsPolicy: e.target.value })}
                     >
@@ -271,14 +278,15 @@ export const RouteBuilderTab: React.FC = () => {
                 </div>
 
                 <div className="pt-2">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Target Cluster Pool</label>
+                  <label htmlFor="route-form-cluster" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Target Cluster Pool</label>
                   {clusters.length === 0 ? (
-                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900/30 p-3.5 rounded-lg flex items-center space-x-2 text-amber-800 dark:text-amber-400 text-xs">
+                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 p-3.5 rounded-lg flex items-center space-x-2 text-amber-800 dark:text-amber-400 text-xs">
                       <AlertTriangle className="h-4.5 w-4.5 shrink-0" />
                       <span>No Clusters configured! Add a cluster first.</span>
                     </div>
                   ) : (
                     <Select 
+                      id="route-form-cluster"
                       value={routeForm.clusterId || ''} 
                       onChange={(e) => setRouteForm({ ...routeForm, clusterId: e.target.value })}
                     >
@@ -290,14 +298,15 @@ export const RouteBuilderTab: React.FC = () => {
                       ))}
                     </Select>
                   )}
-                  <p className="text-[11px] text-slate-400 mt-1">Choose the downstream backend service pool YARP forwards matched requests to.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Choose the downstream backend service pool YARP forwards matched requests to.</p>
                 </div>
+
               </div>
 
               {/* Right Sub-form: Transforms pipeline */}
               <div className="space-y-4 border-l border-slate-200 dark:border-slate-800 pl-6">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Transforms Pipeline Builder</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Transforms Pipeline Builder</label>
                   <Select 
                     value="" 
                     onChange={(e) => {
@@ -322,24 +331,26 @@ export const RouteBuilderTab: React.FC = () => {
 
                 <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1">
                   {(routeForm.transforms || []).length === 0 ? (
-                    <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-md text-xs text-slate-400">
+                    <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-md text-xs text-slate-500 dark:text-slate-400">
                       No HTTP transformations configured. Requests will pass through unchanged.
                     </div>
                   ) : (
+
                     (routeForm.transforms || []).map((t, idx) => {
                       // PathRemovePrefix
                       if (t.hasOwnProperty('PathRemovePrefix')) {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20">PathRemovePrefix</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/20">PathRemovePrefix</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3 w-3" />
                               </Button>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-semibold text-slate-500">Prefix to strip</label>
+                              <label htmlFor={`tr-remove-pref-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Prefix to strip</label>
                               <Input 
+                                id={`tr-remove-pref-${idx}`}
                                 type="text" 
                                 value={t.PathRemovePrefix || ''} 
                                 onChange={(e) => handleUpdateTransformValue(idx, 'PathRemovePrefix', e.target.value)}
@@ -355,14 +366,15 @@ export const RouteBuilderTab: React.FC = () => {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20">PathPrefix</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/20">PathPrefix</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3 w-3" />
                               </Button>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-semibold text-slate-500">Prefix to append</label>
+                              <label htmlFor={`tr-add-pref-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Prefix to append</label>
                               <Input 
+                                id={`tr-add-pref-${idx}`}
                                 type="text" 
                                 value={t.PathPrefix || ''} 
                                 onChange={(e) => handleUpdateTransformValue(idx, 'PathPrefix', e.target.value)}
@@ -378,14 +390,15 @@ export const RouteBuilderTab: React.FC = () => {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20">PathSet</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/20">PathSet</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3 w-3" />
                               </Button>
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[10px] font-semibold text-slate-500">Path Value</label>
+                              <label htmlFor={`tr-path-set-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Path Value</label>
                               <Input 
+                                id={`tr-path-set-${idx}`}
                                 type="text" 
                                 value={t.PathSet || ''} 
                                 onChange={(e) => handleUpdateTransformValue(idx, 'PathSet', e.target.value)}
@@ -401,15 +414,16 @@ export const RouteBuilderTab: React.FC = () => {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20">RequestHeaderAdd</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/20">RequestHeaderAdd</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Header Key</label>
+                                <label htmlFor={`tr-req-h-key-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Header Key</label>
                                 <Input 
+                                  id={`tr-req-h-key-${idx}`}
                                   type="text" 
                                   value={t.RequestHeader || ''} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'RequestHeader', e.target.value)}
@@ -417,8 +431,9 @@ export const RouteBuilderTab: React.FC = () => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Header Value</label>
+                                <label htmlFor={`tr-req-h-val-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Header Value</label>
                                 <Input 
+                                  id={`tr-req-h-val-${idx}`}
                                   type="text" 
                                   value={t.Set || ''} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'Set', e.target.value)}
@@ -435,15 +450,16 @@ export const RouteBuilderTab: React.FC = () => {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/20">ResponseHeader</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/20">ResponseHeader</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                             <div className="grid grid-cols-3 gap-2">
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Header</label>
+                                <label htmlFor={`tr-resp-h-key-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Header</label>
                                 <Input 
+                                  id={`tr-resp-h-key-${idx}`}
                                   type="text" 
                                   value={t.ResponseHeader || ''} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'ResponseHeader', e.target.value)}
@@ -451,8 +467,9 @@ export const RouteBuilderTab: React.FC = () => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Value</label>
+                                <label htmlFor={`tr-resp-h-val-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Value</label>
                                 <Input 
+                                  id={`tr-resp-h-val-${idx}`}
                                   type="text" 
                                   value={t.Set || ''} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'Set', e.target.value)}
@@ -460,8 +477,9 @@ export const RouteBuilderTab: React.FC = () => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">When</label>
+                                <label htmlFor={`tr-resp-h-when-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">When</label>
                                 <Select 
+                                  id={`tr-resp-h-when-${idx}`}
                                   value={t.When || 'Always'} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'When', e.target.value)}
                                   className="h-8 text-xs font-mono"
@@ -481,15 +499,16 @@ export const RouteBuilderTab: React.FC = () => {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/20">QueryParameter</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/20">QueryParameter</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3 w-3" />
                               </Button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Param Key</label>
+                                <label htmlFor={`tr-qp-key-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Param Key</label>
                                 <Input 
+                                  id={`tr-qp-key-${idx}`}
                                   type="text" 
                                   value={t.QueryParameter || ''} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'QueryParameter', e.target.value)}
@@ -497,8 +516,9 @@ export const RouteBuilderTab: React.FC = () => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Value (Set)</label>
+                                <label htmlFor={`tr-qp-val-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Value (Set)</label>
                                 <Input 
+                                  id={`tr-qp-val-${idx}`}
                                   type="text" 
                                   value={t.Set || ''} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'Set', e.target.value)}
@@ -515,15 +535,16 @@ export const RouteBuilderTab: React.FC = () => {
                         return (
                           <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-md border border-slate-100 dark:border-slate-800 space-y-2 relative">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-[10px] font-mono text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20">X-Forwarded-Host</Badge>
+                              <Badge variant="outline" className="text-[10px] font-mono text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20">X-Forwarded-Host</Badge>
                               <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveTransform(idx)}>
                                 <Trash className="h-3 w-3" />
                               </Button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">X-Forwarded Action</label>
+                                <label htmlFor={`tr-xf-action-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">X-Forwarded Action</label>
                                 <Input 
+                                  id={`tr-xf-action-${idx}`}
                                   type="text" 
                                   value={t['X-Forwarded'] || 'Set'} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'X-Forwarded', e.target.value)}
@@ -532,8 +553,9 @@ export const RouteBuilderTab: React.FC = () => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-slate-500">Prefix</label>
+                                <label htmlFor={`tr-xf-pref-${idx}`} className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">Prefix</label>
                                 <Input 
+                                  id={`tr-xf-pref-${idx}`}
                                   type="text" 
                                   value={t.Prefix || 'true'} 
                                   onChange={(e) => handleUpdateTransformValue(idx, 'Prefix', e.target.value)}
@@ -544,6 +566,7 @@ export const RouteBuilderTab: React.FC = () => {
                           </div>
                         )
                       }
+
 
                       // Unrecognized/Custom Generic Transform Key-Value Grid
                       return (
@@ -636,6 +659,7 @@ export const RouteBuilderTab: React.FC = () => {
                 }
               }}
               className="h-9 text-xs pl-9 pr-8 w-full bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/30 dark:hover:bg-slate-800/30 focus-visible:bg-white dark:focus-visible:bg-slate-950 transition-all duration-200"
+              aria-label="Search routes by ID, path, or cluster"
             />
             {routeSearchQuery && (
               <button
@@ -643,6 +667,7 @@ export const RouteBuilderTab: React.FC = () => {
                 onClick={() => setRouteSearchQuery('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-5 w-5 rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700 transition-all duration-200 hover:scale-105 active:scale-95"
                 title="Clear search (Esc)"
+                aria-label="Clear search input"
               >
                 <X className="h-3 w-3 transition-transform duration-200 hover:rotate-90" />
               </button>
@@ -650,78 +675,87 @@ export const RouteBuilderTab: React.FC = () => {
           </div>
 
           <Card>
-            <Table>
-              <TableHeader className="bg-slate-50 dark:bg-slate-950">
-                <TableRow>
-                  <TableHead className="w-1/4">Route ID</TableHead>
-                  <TableHead>Path Matcher</TableHead>
-                  <TableHead>Methods</TableHead>
-                  <TableHead>Target Cluster</TableHead>
-                  <TableHead>Transforms</TableHead>
-                  <TableHead className="text-right w-32">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {routes.length === 0 ? (
+            <div className="overflow-x-auto w-full rounded-lg border border-slate-200 dark:border-slate-800">
+              <Table>
+                <TableHeader className="bg-slate-50 dark:bg-slate-950">
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-400 text-sm">
-                      No routes configured. Click "Add Route" above to begin.
-                    </TableCell>
+                    <TableHead className="w-1/4">Route ID</TableHead>
+                    <TableHead>Path Matcher</TableHead>
+                    <TableHead>Methods</TableHead>
+                    <TableHead>Target Cluster</TableHead>
+                    <TableHead>Transforms</TableHead>
+                    <TableHead className="text-right w-32">Actions</TableHead>
                   </TableRow>
-                ) : filteredRoutes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-400 text-sm">
-                      No routes match your search query.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredRoutes.map((r) => (
-                    <TableRow key={r._localId} className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30" onClick={() => handleEditRoute(r)}>
-                      <TableCell className="font-mono font-bold text-slate-900 dark:text-slate-100">{r.routeId}</TableCell>
-                      <TableCell className="font-mono text-slate-700 dark:text-slate-300 font-semibold">{r.match.path || '/*'}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {(r.match.methods && r.match.methods.length > 0) ? r.match.methods.map(m => (
-                            <Badge key={m} variant="secondary" className="text-[10px] px-1 py-0">{m}</Badge>
-                          )) : (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 text-slate-400 border-slate-200">ANY</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {r.clusterId ? (
-                          <Badge variant="outline" className="font-mono text-xs text-indigo-600 border-indigo-200 bg-indigo-50/50 dark:text-indigo-400 dark:border-indigo-900/30">
-                            {r.clusterId}
-                          </Badge>
-                        ) : (
-                          <Badge variant="destructive" className="text-[10px]">No Cluster Target</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {(r.transforms && r.transforms.length > 0) ? r.transforms.map((t, index) => (
-                            <Badge key={index} variant="outline" className="text-[10px] font-mono border-slate-200 bg-white dark:bg-slate-850">
-                              {Object.keys(t)[0]}
-                            </Badge>
-                          )) : (
-                            <span className="text-slate-400 text-xs">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleEditRoute(r)}>Edit</Button>
-                          <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDeleteRoute(r._localId || '')}>
-                            <Trash className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {routes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-slate-400 text-sm">
+                        No routes configured. Click "Add Route" above to begin.
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : filteredRoutes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-slate-400 text-sm">
+                        No routes match your search query.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRoutes.map((r) => (
+                      <TableRow key={r._localId} className="cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30 font-medium" onClick={() => handleEditRoute(r)}>
+                        <TableCell className="font-mono font-bold text-slate-900 dark:text-slate-100">{r.routeId}</TableCell>
+                        <TableCell className="font-mono text-slate-700 dark:text-slate-300 font-semibold">{r.match.path || '/*'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(r.match.methods && r.match.methods.length > 0) ? r.match.methods.map(m => (
+                              <Badge key={m} variant="secondary" className="text-[10px] px-1 py-0">{m}</Badge>
+                            )) : (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700">ANY</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {r.clusterId ? (
+                            <Badge variant="outline" className="font-mono text-xs text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
+                              {r.clusterId}
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="text-[10px]">No Cluster Target</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(r.transforms && r.transforms.length > 0) ? r.transforms.map((t, index) => (
+                              <Badge key={index} variant="outline" className="text-[10px] font-mono border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300">
+                                {Object.keys(t)[0]}
+                              </Badge>
+                            )) : (
+                              <span className="text-slate-500 dark:text-slate-400 text-xs">-</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEditRoute(r)}>Edit</Button>
+                            <Button 
+                              variant="destructive" 
+                              size="icon" 
+                              className="h-8 w-8 focus-visible:ring-2 focus-visible:ring-red-500" 
+                              onClick={() => handleDeleteRoute(r._localId || '')}
+                              aria-label={`Delete route ${r.routeId}`}
+                            >
+                              <Trash className="h-3.5 w-3.5" aria-hidden="true" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </Card>
+
         </div>
       )}
     </div>

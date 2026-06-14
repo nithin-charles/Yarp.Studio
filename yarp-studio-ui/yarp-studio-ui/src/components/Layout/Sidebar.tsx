@@ -5,9 +5,7 @@ import {
   Server, 
   PlayCircle, 
   PanelLeftClose, 
-  PanelLeftOpen,
-  Check,
-  AlertTriangle 
+  PanelLeftOpen
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
@@ -21,11 +19,20 @@ export const Sidebar: React.FC = () => {
     setIsSidebarCollapsed,
     routes,
     clusters,
-    notification
+    isSmallScreen
   } = useApp()
 
+  const asideClasses = isSmallScreen
+    ? `${isSidebarCollapsed ? 'w-0 overflow-hidden p-0 border-r-0' : 'w-64 p-4 fixed inset-y-14 left-0 z-50 h-[calc(100vh-3.5rem)] shadow-xl'} border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col justify-between transition-all duration-300 py-4`
+    : `${isSidebarCollapsed ? 'w-16 px-2' : 'w-64 p-4'} border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col justify-between shrink-0 transition-all duration-300 py-4`
+
   return (
-    <aside className={`${isSidebarCollapsed ? 'w-16 px-2' : 'w-64 p-4'} border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col justify-between shrink-0 transition-all duration-300 py-4`}>
+    <aside 
+      className={asideClasses} 
+      role="complementary" 
+      aria-label="Navigation Sidebar"
+      aria-hidden={isSmallScreen && isSidebarCollapsed}
+    >
       <div className="space-y-6">
         {!isSidebarCollapsed && (
           <div className="flex items-center justify-between px-3">
@@ -34,44 +41,56 @@ export const Sidebar: React.FC = () => {
               variant="ghost" 
               size="icon" 
               onClick={() => setIsSidebarCollapsed(true)} 
-              className="h-6 w-6 text-slate-400 hover:text-slate-600"
+              className="h-6 w-6 text-slate-400 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-indigo-500"
               title="Collapse Sidebar"
+              aria-label="Collapse sidebar navigation panel"
             >
-              <PanelLeftClose className="h-3.5 w-3.5" />
+              <PanelLeftClose className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           </div>
         )}
-        {isSidebarCollapsed && (
+        {isSidebarCollapsed && !isSmallScreen && (
           <div className="flex justify-center mb-4">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setIsSidebarCollapsed(false)} 
-              className="h-8 w-8 text-slate-400 hover:text-slate-600"
+              className="h-8 w-8 text-slate-400 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-indigo-500"
               title="Expand Sidebar"
+              aria-label="Expand sidebar navigation panel"
             >
-              <PanelLeftOpen className="h-4.5 w-4.5" />
+              <PanelLeftOpen className="h-4.5 w-4.5" aria-hidden="true" />
             </Button>
           </div>
         )}
-        <nav className={`mt-2 ${isSidebarCollapsed ? 'space-y-3' : 'space-y-1'}`}>
+        <nav className={`mt-2 ${isSidebarCollapsed ? 'space-y-3' : 'space-y-1'}`} aria-label="Primary Navigation">
           <Button 
-            onClick={() => setActiveView('overview')}
+            onClick={() => {
+              setActiveView('overview')
+              if (isSmallScreen) setIsSidebarCollapsed(true)
+            }}
             variant={activeView === 'overview' ? 'secondary' : 'ghost'} 
-            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10' : 'justify-start text-left'}`}
+            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10' : 'justify-start text-left'} focus-visible:ring-2 focus-visible:ring-indigo-500`}
             title="Overview Map"
+            aria-label="Overview Map"
+            aria-current={activeView === 'overview' ? 'page' : undefined}
           >
-            <Network className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-indigo-500`} />
+            <Network className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-indigo-500`} aria-hidden="true" />
             {!isSidebarCollapsed && <span>Overview Map</span>}
           </Button>
           
           <Button 
-            onClick={() => setActiveView('routes')}
+            onClick={() => {
+              setActiveView('routes')
+              if (isSmallScreen) setIsSidebarCollapsed(true)
+            }}
             variant={activeView === 'routes' ? 'secondary' : 'ghost'} 
-            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10 relative' : 'justify-start text-left'}`}
+            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10 relative' : 'justify-start text-left'} focus-visible:ring-2 focus-visible:ring-indigo-500`}
             title="Routes"
+            aria-label={`Routes list, containing ${routes.length} configured routes`}
+            aria-current={activeView === 'routes' ? 'page' : undefined}
           >
-            <Layers className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-purple-500`} />
+            <Layers className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-purple-500`} aria-hidden="true" />
             {!isSidebarCollapsed && (
               <>
                 <span>Routes</span>
@@ -83,17 +102,22 @@ export const Sidebar: React.FC = () => {
               </>
             )}
             {isSidebarCollapsed && routes.length > 0 && (
-              <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+              <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" aria-hidden="true" />
             )}
           </Button>
           
           <Button 
-            onClick={() => setActiveView('clusters')}
+            onClick={() => {
+              setActiveView('clusters')
+              if (isSmallScreen) setIsSidebarCollapsed(true)
+            }}
             variant={activeView === 'clusters' ? 'secondary' : 'ghost'} 
-            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10 relative' : 'justify-start text-left'}`}
+            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10 relative' : 'justify-start text-left'} focus-visible:ring-2 focus-visible:ring-indigo-500`}
             title="Clusters"
+            aria-label={`Clusters list, containing ${clusters.length} configured clusters`}
+            aria-current={activeView === 'clusters' ? 'page' : undefined}
           >
-            <Server className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-emerald-500`} />
+            <Server className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-emerald-500`} aria-hidden="true" />
             {!isSidebarCollapsed && (
               <>
                 <span>Clusters</span>
@@ -105,36 +129,28 @@ export const Sidebar: React.FC = () => {
               </>
             )}
             {isSidebarCollapsed && clusters.length > 0 && (
-              <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
             )}
           </Button>
           
           <Button 
-            onClick={() => setActiveView('playground')}
+            onClick={() => {
+              setActiveView('playground')
+              if (isSmallScreen) setIsSidebarCollapsed(true)
+            }}
             variant={activeView === 'playground' ? 'secondary' : 'ghost'} 
-            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10' : 'justify-start text-left'}`}
+            className={`w-full ${isSidebarCollapsed ? 'justify-center p-0 h-10' : 'justify-start text-left'} focus-visible:ring-2 focus-visible:ring-indigo-500`}
             title="Routing Playground"
+            aria-label="Routing Playground"
+            aria-current={activeView === 'playground' ? 'page' : undefined}
           >
-            <PlayCircle className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-rose-500`} />
+            <PlayCircle className={`${isSidebarCollapsed ? 'mr-0' : 'mr-3'} h-4 w-4 text-rose-500`} aria-hidden="true" />
             {!isSidebarCollapsed && <span>Routing Playground</span>}
           </Button>
         </nav>
       </div>
 
-      <div className="space-y-4">
-        {notification && !isSidebarCollapsed && (
-          <div className={`p-3 rounded-md border text-xs flex items-start space-x-2 animate-in fade-in-50 duration-300 ${
-            notification.type === 'success' 
-              ? 'bg-emerald-50 border-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400' 
-              : 'bg-red-50 border-red-100 text-red-800 dark:bg-red-950/20 dark:border-red-900/30 dark:text-red-400'
-          }`}>
-            <div className="mt-0.5 shrink-0">
-              {notification.type === 'success' ? <Check className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-            </div>
-            <div className="flex-1 overflow-hidden break-words">{notification.message}</div>
-          </div>
-        )}
-      </div>
+
     </aside>
   )
 }

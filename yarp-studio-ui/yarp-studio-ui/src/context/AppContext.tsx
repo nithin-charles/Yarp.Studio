@@ -20,6 +20,7 @@ interface AppContextType {
   setIsSidebarCollapsed: (collapsed: boolean) => void;
   isRightPanelCollapsed: boolean;
   setIsRightPanelCollapsed: (collapsed: boolean) => void;
+  isSmallScreen: boolean;
 
   // Configuration State
   routes: RouteConfig[];
@@ -30,6 +31,7 @@ interface AppContextType {
   isSaving: boolean;
   notification: { type: 'success' | 'error'; message: string } | null;
   showNotification: (type: 'success' | 'error', message: string) => void;
+  dismissNotification: () => void;
 
   // Search/Filters
   routeSearchQuery: string;
@@ -104,7 +106,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeView, setActiveView] = useState<'overview' | 'routes' | 'clusters' | 'playground'>('overview')
   const [activeTab, setActiveTab] = useState<'visual' | 'json'>('visual')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false)
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(true)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+
+  // Track viewport size dynamically
+  useEffect(() => {
+    const handleResize = () => {
+      const isSmall = window.innerWidth < 1024
+      setIsSmallScreen(isSmall)
+      if (isSmall) {
+        setIsSidebarCollapsed(true)
+        setIsRightPanelCollapsed(true)
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Core configuration states
   const [routes, setRoutes] = useState<RouteConfig[]>([])
@@ -140,6 +158,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotification({ type, message })
     setTimeout(() => setNotification(null), 7000)
   }
+
+  const dismissNotification = () => setNotification(null)
 
   // Fetch status and config on mount
   useEffect(() => {
@@ -564,6 +584,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsSidebarCollapsed,
       isRightPanelCollapsed,
       setIsRightPanelCollapsed,
+      isSmallScreen,
       routes,
       setRoutes,
       clusters,
@@ -572,6 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isSaving,
       notification,
       showNotification,
+      dismissNotification,
       routeSearchQuery,
       setRouteSearchQuery,
       filteredRoutes,

@@ -12,7 +12,7 @@ using Yarp.Studio.Core.Providers;
 
 public static class VisualDesignerApplicationExtensions
 {
-    public static IReverseProxyBuilder AddVisualUIConfig(this IReverseProxyBuilder builder)
+    public static IReverseProxyBuilder AddYarpStudio(this IReverseProxyBuilder builder)
     {
         builder.Services.AddSingleton<VisualProxyConfigProvider>();
         builder.Services.AddSingleton<IProxyConfigProvider>(sp => sp.GetRequiredService<VisualProxyConfigProvider>());

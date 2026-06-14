@@ -37,8 +37,9 @@ export const PlaygroundTab: React.FC = () => {
           </CardHeader>
           <CardContent className="p-5 space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">HTTP Method</label>
+              <label htmlFor="play-form-method" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">HTTP Method</label>
               <Select 
+                id="play-form-method"
                 value={playMethod} 
                 onChange={(e) => setPlayMethod(e.target.value)}
               >
@@ -52,8 +53,9 @@ export const PlaygroundTab: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">Request Path</label>
+              <label htmlFor="play-form-path" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">Request Path</label>
               <Input 
+                id="play-form-path"
                 type="text" 
                 value={playPath} 
                 onChange={(e) => setPlayPath(e.target.value)}
@@ -62,8 +64,9 @@ export const PlaygroundTab: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">Host Header</label>
+              <label htmlFor="play-form-host" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5 font-medium">Host Header</label>
               <Input 
+                id="play-form-host"
                 type="text" 
                 value={playHost} 
                 onChange={(e) => setPlayHost(e.target.value)}
@@ -73,7 +76,7 @@ export const PlaygroundTab: React.FC = () => {
 
             <Button 
               onClick={simulateRouting} 
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium shadow-md shadow-rose-600/10"
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium shadow-md shadow-rose-600/10 focus-visible:ring-2 focus-visible:ring-rose-500"
             >
               Run Trace
             </Button>
@@ -86,14 +89,14 @@ export const PlaygroundTab: React.FC = () => {
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-slate-500">Trace Results</CardTitle>
             <CardDescription>Evaluation matching pipeline results.</CardDescription>
           </CardHeader>
-          <CardContent className="p-5">
+          <CardContent className="p-5" aria-live="polite">
             {!playResult ? (
               <div className="text-center py-12 text-slate-400 text-sm">
                 Click "Run Trace" to evaluate request parameters.
               </div>
             ) : !playResult.matched ? (
-              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-lg p-5 flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-lg p-5 flex items-start space-x-3" role="alert">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <h4 className="text-sm font-bold text-red-800 dark:text-red-400">404 - Not Matched</h4>
                   <p className="text-xs text-red-600 dark:text-red-500 mt-1 leading-relaxed">
@@ -104,8 +107,8 @@ export const PlaygroundTab: React.FC = () => {
             ) : (
               <div className="space-y-5">
                 {/* Match Info */}
-                <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-4 flex items-start space-x-3.5">
-                  <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-4 flex items-start space-x-3.5" role="status">
+                  <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Successfully Matched</h4>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-mono">
@@ -120,12 +123,12 @@ export const PlaygroundTab: React.FC = () => {
                 {/* Transform Trace */}
                 <div>
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Transform Output</h4>
-                  <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 rounded-md p-3.5 space-y-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                  <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-md p-3.5 space-y-2 font-mono text-xs text-slate-700 dark:text-slate-300">
                     <div>
                       <span className="text-slate-400">Original Path:</span> {playPath}
                     </div>
                     {playResult.transformTrace.length > 0 ? (
-                      <div className="space-y-1.5 pt-1.5 border-t border-slate-200/50 dark:border-slate-800/80">
+                      <div className="space-y-1.5 pt-1.5 border-t border-slate-200/50 dark:border-slate-800">
                         {playResult.transformTrace.map((t: any, i: number) => (
                           <div key={i} className="flex items-center space-x-1.5">
                             <Badge variant="outline" className="text-[10px] scale-90">{t.name}</Badge>
@@ -160,7 +163,7 @@ export const PlaygroundTab: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Target Cluster Dispatch</h4>
                   {playResult.cluster ? (
-                    <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 rounded-md p-3.5 space-y-3">
+                    <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-md p-3.5 space-y-3">
                       <div className="flex items-center justify-between text-xs font-mono">
                         <div>
                           <span className="text-slate-400">Cluster:</span> <span className="font-bold text-slate-700 dark:text-slate-300">{playResult.cluster.clusterId}</span>
@@ -169,7 +172,7 @@ export const PlaygroundTab: React.FC = () => {
                           <span className="text-slate-400">LB Policy:</span> {playResult.cluster.loadBalancingPolicy}
                         </div>
                       </div>
-                      <div className="space-y-1.5 pt-2 border-t border-slate-200/50 dark:border-slate-850/80">
+                      <div className="space-y-1.5 pt-2 border-t border-slate-200/50 dark:border-slate-800/80">
                         <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Destination endpoints:</span>
                         {Object.entries(playResult.cluster.destinations || {}).map(([key, val]: any) => {
                           const liveDest = playResult.liveStatus?.destinations?.find((d: any) => d.destinationId === key);

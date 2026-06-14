@@ -95,6 +95,7 @@ export const OverviewTab: React.FC = () => {
               }
             }}
             className="h-9 text-xs pl-9 pr-8 w-full bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/30 dark:hover:bg-slate-800/30 focus-visible:bg-white dark:focus-visible:bg-slate-950 transition-all duration-200"
+            aria-label="Search routes and clusters"
           />
           {overviewSearchQuery && (
             <button
@@ -105,6 +106,7 @@ export const OverviewTab: React.FC = () => {
               }}
               className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-5 w-5 rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-700 transition-all duration-200 hover:scale-105 active:scale-95"
               title="Clear search (Esc)"
+              aria-label="Clear search input"
             >
               <X className="h-3 w-3 transition-transform duration-200 hover:rotate-90" />
             </button>
@@ -172,22 +174,24 @@ export const OverviewTab: React.FC = () => {
               const strokeColor = isPathActive ? "url(#active-grad)" : "currentColor"
               const strokeWidth = isPathActive ? 3.5 : 1.5
               
-              const cp1X = routePt.x + 40
-              const cp2X = gwInPt.x - 40
+              const isVertical = Math.abs(routePt.x - gwInPt.x) < 150
+              const pathD = isVertical
+                ? `M ${routePt.x} ${routePt.y} C ${routePt.x} ${routePt.y + 40}, ${gwInPt.x} ${gwInPt.y - 40}, ${gwInPt.x} ${gwInPt.y}`
+                : `M ${routePt.x} ${routePt.y} C ${routePt.x + 40} ${routePt.y}, ${gwInPt.x - 40} ${gwInPt.y}, ${gwInPt.x} ${gwInPt.y}`
               
               return (
                 <g key={`route-line-${r.routeId}`}>
                   <path
-                    d={`M ${routePt.x} ${routePt.y} C ${cp1X} ${routePt.y}, ${cp2X} ${gwInPt.y}, ${gwInPt.x} ${gwInPt.y}`}
+                    d={pathD}
                     fill="none"
                     stroke={strokeColor}
                     strokeWidth={strokeWidth}
                     opacity={opacity}
-                    className={`transition-all duration-300 ${isPathActive ? 'text-indigo-500 filter drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'text-slate-300 dark:text-slate-850'}`}
+                    className={`transition-all duration-300 ${isPathActive ? 'text-indigo-500 filter drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'text-slate-300 dark:text-slate-800'}`}
                   />
                   {isPathActive && (
                     <path
-                      d={`M ${routePt.x} ${routePt.y} C ${cp1X} ${routePt.y}, ${cp2X} ${gwInPt.y}, ${gwInPt.x} ${gwInPt.y}`}
+                      d={pathD}
                       fill="none"
                       stroke="url(#active-grad)"
                       strokeWidth={strokeWidth}
@@ -218,22 +222,24 @@ export const OverviewTab: React.FC = () => {
               const strokeColor = isClusterActive ? "#10b981" : "currentColor"
               const strokeWidth = isClusterActive ? 3.5 : 1.5
               
-              const cp1X = gwOutPt.x + 40
-              const cp2X = clusterPt.x - 40
+              const isVertical = Math.abs(gwOutPt.x - clusterPt.x) < 150
+              const pathD = isVertical
+                ? `M ${gwOutPt.x} ${gwOutPt.y} C ${gwOutPt.x} ${gwOutPt.y + 40}, ${clusterPt.x} ${clusterPt.y - 40}, ${clusterPt.x} ${clusterPt.y}`
+                : `M ${gwOutPt.x} ${gwOutPt.y} C ${gwOutPt.x + 40} ${gwOutPt.y}, ${clusterPt.x - 40} ${clusterPt.y}, ${clusterPt.x} ${clusterPt.y}`
               
               return (
                 <g key={`cluster-line-${c.clusterId}`}>
                   <path
-                    d={`M ${gwOutPt.x} ${gwOutPt.y} C ${cp1X} ${gwOutPt.y}, ${cp2X} ${clusterPt.y}, ${clusterPt.x} ${clusterPt.y}`}
+                    d={pathD}
                     fill="none"
                     stroke={strokeColor}
                     strokeWidth={strokeWidth}
                     opacity={opacity}
-                    className={`transition-all duration-300 ${isClusterActive ? 'text-emerald-500 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-slate-300 dark:text-slate-850'}`}
+                    className={`transition-all duration-300 ${isClusterActive ? 'text-emerald-500 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-slate-300 dark:text-slate-800'}`}
                   />
                   {isClusterActive && (
                     <path
-                      d={`M ${gwOutPt.x} ${gwOutPt.y} C ${cp1X} ${gwOutPt.y}, ${cp2X} ${clusterPt.y}, ${clusterPt.x} ${clusterPt.y}`}
+                      d={pathD}
                       fill="none"
                       stroke="#10b981"
                       strokeWidth={strokeWidth}
@@ -245,6 +251,7 @@ export const OverviewTab: React.FC = () => {
                 </g>
               )
             })}
+
           </svg>
 
           {/* Column 1: Matchers / Routes (Traffic Entrypoint) */}
@@ -295,15 +302,15 @@ export const OverviewTab: React.FC = () => {
                       {/* Output connector port visual */}
                       <div 
                         id={`route-port-${r.routeId}`}
-                        className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 transition-all duration-300 z-10 ${
+                        className={`absolute -right-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 z-10 ${
                           isHovered 
-                            ? 'border-indigo-500 bg-indigo-500 shadow-[0_0_6px_#6366f1] scale-125' 
+                            ? 'border-indigo-500 bg-indigo-500 shadow-[0_0_6px_#6366f1] scale-110' 
                             : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950'
                         }`}
                       />
                       
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
+                      <CardContent className="pl-4 py-3.5 pr-6 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
                           <Badge variant="outline" className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/30 font-semibold max-w-[150px] truncate">
                             {r.routeId}
                           </Badge>
@@ -357,11 +364,19 @@ export const OverviewTab: React.FC = () => {
               {/* Port markers */}
               <div 
                 id="gw-port-in"
-                className="absolute left-0 top-1/2 -translate-y-1/2 -ml-1.5 w-3 h-3 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 transition-all duration-300 z-10"
+                className={`absolute left-0 top-1/2 -translate-y-1/2 -ml-[5px] w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 z-10 ${
+                  hoveredRouteId 
+                    ? 'border-indigo-500 bg-indigo-500 shadow-[0_0_6px_#6366f1] scale-110' 
+                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950'
+                }`}
               />
               <div 
                 id="gw-port-out"
-                className="absolute right-0 top-1/2 -translate-y-1/2 -mr-1.5 w-3 h-3 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 transition-all duration-300 z-10"
+                className={`absolute right-0 top-1/2 -translate-y-1/2 -mr-[5px] w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 z-10 ${
+                  hoveredRouteId 
+                    ? 'border-emerald-500 bg-emerald-500 shadow-[0_0_6px_#10b981] scale-110' 
+                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950'
+                }`}
               />
 
               {/* Header / Engine Core */}
@@ -487,7 +502,7 @@ export const OverviewTab: React.FC = () => {
               </div>
 
               {/* Footer status bar */}
-              <div className="bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-850 py-2.5 px-4 text-[10px] flex items-center justify-between text-slate-400">
+              <div className="bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 py-2.5 px-4 text-[10px] flex items-center justify-between text-slate-400">
                 <span className="font-mono flex items-center space-x-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-emerald-500 font-semibold">Active & Live</span>
@@ -549,22 +564,36 @@ export const OverviewTab: React.FC = () => {
                       {/* Input connector port visual */}
                       <div 
                         id={`cluster-port-${c.clusterId}`}
-                        className={`absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 transition-all duration-300 z-10 ${
+                        className={`absolute -left-[5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 z-10 ${
                           isHighlighted 
-                            ? 'border-emerald-500 bg-emerald-500 shadow-[0_0_6px_#10b981] scale-125' 
+                            ? 'border-emerald-500 bg-emerald-500 shadow-[0_0_6px_#10b981] scale-110' 
                             : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950'
                         }`}
                       />
                       
                       {/* Header triggers accordion toggle */}
                       <CardHeader 
-                        className="p-4 pb-2.5 cursor-pointer select-none"
+                        className="pl-6 pr-4 py-4 pb-2.5 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded-t-xl transition-all"
+                        tabIndex={0}
+                        role="button"
+                        aria-expanded={!!expandedClusters[c.clusterId]}
+                        aria-controls={`cluster-details-${c.clusterId}`}
                         onClick={() => {
                           setExpandedClusters((prev) => ({
                             ...prev,
                             [c.clusterId]: !prev[c.clusterId]
                           }))
                           setTimeout(updateNodeCoords, 150)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setExpandedClusters((prev) => ({
+                              ...prev,
+                              [c.clusterId]: !prev[c.clusterId]
+                            }))
+                            setTimeout(updateNodeCoords, 150)
+                          }
                         }}
                       >
                         <div className="flex items-center justify-between">
@@ -585,11 +614,12 @@ export const OverviewTab: React.FC = () => {
                                 }))
                                 setTimeout(updateNodeCoords, 150)
                               }}
+                              aria-label={expandedClusters[c.clusterId] ? "Collapse cluster details" : "Expand cluster details"}
                             >
                               {expandedClusters[c.clusterId] ? (
-                                <ChevronUp className="h-4 w-4" />
+                                <ChevronUp className="h-4 w-4" aria-hidden="true" />
                               ) : (
-                                <ChevronDown className="h-4 w-4" />
+                                <ChevronDown className="h-4 w-4" aria-hidden="true" />
                               )}
                             </Button>
                           </div>
@@ -599,7 +629,7 @@ export const OverviewTab: React.FC = () => {
                           <span>Policy: <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">{c.loadBalancingPolicy || 'RoundRobin'}</span></span>
                           {c.healthCheck?.active?.enabled && (
                             <Badge variant="outline" className="text-[9px] text-emerald-600 dark:text-emerald-400 border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center space-x-1 py-0 px-1.5 shrink-0 scale-95 origin-right">
-                              <Activity className="h-2.5 w-2.5 shrink-0" />
+                              <Activity className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
                               <span>Probing</span>
                             </Badge>
                           )}
@@ -608,7 +638,11 @@ export const OverviewTab: React.FC = () => {
                       
                       {/* Accordion Content Panel */}
                       {(expandedClusters[c.clusterId]) && (
-                        <CardContent className="px-4 pb-3 pt-0 space-y-2 animate-fadeIn">
+                        <CardContent 
+                          id={`cluster-details-${c.clusterId}`}
+                          className="pl-6 pr-4 pb-3 pt-0 space-y-2 animate-fadeIn"
+                        >
+
                           {statusInfo && statusInfo.destinations && statusInfo.destinations.length > 0 && (
                             <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-900/50 flex flex-col">
                               <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">Destination endpoints:</span>
