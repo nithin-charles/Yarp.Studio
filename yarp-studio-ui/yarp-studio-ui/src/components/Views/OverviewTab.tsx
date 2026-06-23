@@ -647,30 +647,37 @@ export const OverviewTab: React.FC = () => {
                             <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-900/50 flex flex-col">
                               <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">Destination endpoints:</span>
                               <div className="flex flex-col space-y-1.5">
-                                {statusInfo.destinations.map((d) => (
-                                  <div 
-                                    key={d.destinationId} 
-                                    className="flex items-center justify-between px-2 py-1 rounded bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 text-[10px] font-mono"
-                                    title={`${d.address}: Active=${d.healthActive}, Passive=${d.healthPassive}`}
-                                  >
-                                    <div className="flex items-center space-x-1.5 min-w-0">
-                                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                                        d.healthActive === 'Healthy' ? 'bg-emerald-500 animate-pulse shadow-[0_0_4px_#10b981]' :
-                                        d.healthActive === 'Unhealthy' ? 'bg-rose-500' :
-                                        'bg-slate-400'
-                                      }`} />
-                                      <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[80px]">{d.destinationId}</span>
-                                      <span className="text-[9px] text-slate-400 truncate max-w-[100px]">({d.address})</span>
+                                {statusInfo.destinations.map((d) => {
+                                  const activeEnabled = c.healthCheck?.active?.enabled;
+                                  const showUnmonitored = !activeEnabled;
+                                  return (
+                                    <div 
+                                      key={d.destinationId} 
+                                      className="flex items-center justify-between px-2 py-1 rounded bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 text-[10px] font-mono"
+                                      title={`${d.address}: Active=${d.healthActive}, Passive=${d.healthPassive}`}
+                                    >
+                                      <div className="flex items-center space-x-1.5 min-w-0">
+                                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                                          showUnmonitored ? 'bg-slate-400 dark:bg-slate-600' :
+                                          d.healthActive === 'Healthy' ? 'bg-emerald-500 animate-pulse shadow-[0_0_4px_#10b981]' :
+                                          d.healthActive === 'Unhealthy' ? 'bg-rose-500' :
+                                          'bg-slate-400'
+                                        }`} />
+                                        <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[80px]">{d.destinationId}</span>
+                                        <span className="text-[9px] text-slate-400 truncate max-w-[100px]">({d.address})</span>
+                                      </div>
+                                      <span className={`text-[8px] font-bold uppercase py-0 px-1 rounded-sm border shrink-0 scale-90 ${
+                                        showUnmonitored
+                                          ? 'text-slate-500 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-900/20 dark:border-slate-800'
+                                          : d.healthActive === 'Healthy'
+                                            ? 'text-emerald-600 bg-emerald-50/50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30'
+                                            : 'text-rose-600 bg-rose-50/50 border-rose-200 dark:text-rose-400 dark:bg-rose-950/20 dark:border-rose-900/30'
+                                      }`}>
+                                        {showUnmonitored ? 'Not Monitored' : d.healthActive}
+                                      </span>
                                     </div>
-                                    <span className={`text-[8px] font-bold uppercase py-0 px-1 rounded-sm border shrink-0 scale-90 ${
-                                      d.healthActive === 'Healthy'
-                                        ? 'text-emerald-600 bg-emerald-50/50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30'
-                                        : 'text-rose-600 bg-rose-50/50 border-rose-200 dark:text-rose-400 dark:bg-rose-950/20 dark:border-rose-900/30'
-                                    }`}>
-                                      {d.healthActive}
-                                    </span>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           )}

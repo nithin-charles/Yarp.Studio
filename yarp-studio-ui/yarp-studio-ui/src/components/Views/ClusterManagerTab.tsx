@@ -431,6 +431,28 @@ export const ClusterManagerTab: React.FC = () => {
                               if (!statusInfo) return <span className="text-xs text-slate-400 font-mono">Unknown</span>
                               const healthyCount = statusInfo.destinations.filter(d => d.isHealthy).length
                               const totalCount = statusInfo.destinations.length
+                              
+                              const activeEnabled = c.healthCheck?.active?.enabled
+                              
+                              if (!activeEnabled) {
+                                return (
+                                  <div className="flex flex-col space-y-1" onClick={(e) => e.stopPropagation()}>
+                                    <Badge className="text-[10px] w-fit font-semibold bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800">
+                                      Not Monitored
+                                    </Badge>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {statusInfo.destinations.map(d => (
+                                        <span 
+                                          key={d.destinationId} 
+                                          className="h-2 w-2 rounded-full inline-block bg-slate-300 dark:bg-slate-700" 
+                                          title={`${d.destinationId} (${d.address}): Not Monitored`}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              
                               return (
                                 <div className="flex flex-col space-y-1" onClick={(e) => e.stopPropagation()}>
                                   <Badge 
@@ -447,7 +469,7 @@ export const ClusterManagerTab: React.FC = () => {
                                       <span 
                                         key={d.destinationId} 
                                         className={`h-2 w-2 rounded-full inline-block ${
-                                          d.healthActive === 'Healthy' ? 'bg-emerald-500' :
+                                          d.healthActive === 'Healthy' ? 'bg-emerald-500 animate-pulse shadow-[0_0_4px_#10b981]' :
                                           d.healthActive === 'Unhealthy' ? 'bg-red-500' :
                                           'bg-slate-400'
                                         }`} 

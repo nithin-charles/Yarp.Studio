@@ -177,11 +177,14 @@ export const PlaygroundTab: React.FC = () => {
                         {Object.entries(playResult.cluster.destinations || {}).map(([key, val]: any) => {
                           const liveDest = playResult.liveStatus?.destinations?.find((d: any) => d.destinationId === key);
                           const healthStr = liveDest ? liveDest.healthActive : 'Unknown';
+                          const activeEnabled = playResult.cluster.healthCheck?.active?.enabled;
+                          const showUnmonitored = !activeEnabled;
                           const isHealthy = liveDest ? liveDest.isHealthy : true;
                           return (
                             <div key={key} className="flex items-center justify-between bg-white dark:bg-slate-950 px-2.5 py-1.5 rounded border border-slate-200/50 dark:border-slate-800/50 text-xs font-mono">
                               <div className="flex items-center space-x-2">
                                 <span className={`h-1.5 w-1.5 rounded-full ${
+                                  showUnmonitored ? 'bg-slate-400 dark:bg-slate-600' :
                                   healthStr === 'Healthy' ? 'bg-emerald-500' :
                                   healthStr === 'Unhealthy' ? 'bg-red-500' :
                                   'bg-slate-400'
@@ -189,8 +192,11 @@ export const PlaygroundTab: React.FC = () => {
                                 <span className="font-bold text-slate-700 dark:text-slate-300">{key}</span>
                                 <span className="text-[10px] text-slate-400">({val.address})</span>
                               </div>
-                              <Badge variant={isHealthy ? 'success' : 'destructive'} className="text-[9px] py-0 font-medium">
-                                {healthStr}
+                              <Badge 
+                                variant={showUnmonitored ? 'secondary' : isHealthy ? 'success' : 'destructive'} 
+                                className="text-[9px] py-0 font-medium"
+                              >
+                                {showUnmonitored ? 'Not Monitored' : healthStr}
                               </Badge>
                             </div>
                           );
