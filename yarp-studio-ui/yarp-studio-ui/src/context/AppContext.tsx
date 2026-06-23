@@ -29,6 +29,7 @@ interface AppContextType {
   setClusters: React.Dispatch<React.SetStateAction<ClusterConfig[]>>;
   isLoading: boolean;
   isSaving: boolean;
+  hasChanges: boolean;
   notification: { type: 'success' | 'error'; message: string } | null;
   showNotification: (type: 'success' | 'error', message: string) => void;
   dismissNotification: () => void;
@@ -127,8 +128,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Core configuration states
   const [routes, setRoutes] = useState<RouteConfig[]>([])
   const [clusters, setClusters] = useState<ClusterConfig[]>([])
+  const [originalConfig, setOriginalConfig] = useState<{ routes: RouteConfig[]; clusters: ClusterConfig[] } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+
+  const hasChanges = useMemo(() => {
+    if (!originalConfig) return false
+    
+    // Clean current state (strip _localId)
+    const cleanCurrentRoutes = routes.map(({ _localId, ...r }) => r)
+    const cleanCurrentClusters = clusters.map(({ _localId, ...c }) => c)
+
+    // Clean original state (strip _localId)
+    const cleanOriginalRoutes = originalConfig.routes.map(({ _localId, ...r }) => r)
+    const cleanOriginalClusters = originalConfig.clusters.map(({ _localId, ...c }) => c)
+
+    return JSON.stringify(cleanCurrentRoutes) !== JSON.stringify(cleanOriginalRoutes) ||
+           JSON.stringify(cleanCurrentClusters) !== JSON.stringify(cleanOriginalClusters)
+  }, [routes, clusters, originalConfig])
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   // Search states
@@ -240,6 +257,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         setRoutes(fetchedRoutes)
         setClusters(fetchedClusters)
+        setOriginalConfig({ routes: fetchedRoutes, clusters: fetchedClusters })
       } else {
         showNotification('error', 'Failed to retrieve configuration from backend.')
       }
@@ -591,6 +609,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setClusters,
       isLoading,
       isSaving,
+      hasChanges,
       notification,
       showNotification,
       dismissNotification,

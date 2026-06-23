@@ -9,6 +9,7 @@ export const Header: React.FC = () => {
     theme,
     setTheme,
     isSaving,
+    hasChanges,
     isRefreshingStatus,
     fetchStatus,
     handleSaveConfig,
@@ -78,7 +79,7 @@ export const Header: React.FC = () => {
         {/* Apply Config Button */}
         <Button 
           onClick={handleSaveConfig} 
-          disabled={isSaving || validationErrors.length > 0}
+          disabled={isSaving || !hasChanges || validationErrors.length > 0}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-md shadow-indigo-600/10 text-xs h-9 px-2.5 sm:px-3 focus-visible:ring-2 focus-visible:ring-indigo-500"
           title="Apply Configuration Changes and trigger Hot-reload"
           aria-label="Apply current configuration changes"
