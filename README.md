@@ -9,6 +9,8 @@ A modern, visual administrative dashboard and designer for **YARP (Yet Another R
 
 ## ✨ Features
 
+![YARP Studio Dashboard](https://github.com/nithin-charles/Yarp.Studio/blob/master/asset/yarp-studio.png)
+
 - **🌐 Live Topology Visualizer**: Trace traffic flow from public routes through authentication, CORS, and transforms to target clusters.
 - **🛣️ Route Builder & Editor**: Define routing matchers (paths, methods, host headers), configure policies, and add path/header transforms.
 - **🖥️ Cluster & Destination Manager**: Configure load-balancing, active/passive health checks, and manage backend destination addresses.
