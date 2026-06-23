@@ -29,6 +29,8 @@ export const RouteBuilderTab: React.FC = () => {
     transforms: []
   })
 
+  const routeToDelete = deleteConfirmId ? routes.find(r => r._localId === deleteConfirmId) : null
+
   // --- Route Handlers ---
   const handleAddRoute = () => {
     const tempId = `route-${Date.now().toString().slice(-4)}`
@@ -760,38 +762,35 @@ export const RouteBuilderTab: React.FC = () => {
         </div>
       )}
 
-      {deleteConfirmId && (() => {
-        const routeToDelete = routes.find(r => r._localId === deleteConfirmId)
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center space-x-3 text-red-600 dark:text-red-400">
-                <AlertTriangle className="h-6 w-6 shrink-0" />
-                <h3 className="text-lg font-bold">Delete Route?</h3>
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Are you sure you want to delete route <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{routeToDelete?.routeId}</span>? This action cannot be undone and will immediately affect routing.
-              </p>
-              <div className="flex justify-end space-x-2 pt-2">
-                <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
-                  Cancel
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => {
-                    if (deleteConfirmId) {
-                      handleDeleteRoute(deleteConfirmId)
-                      setDeleteConfirmId(null)
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
-              </div>
+      {deleteConfirmId && routeToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center space-x-3 text-red-600 dark:text-red-400">
+              <AlertTriangle className="h-6 w-6 shrink-0" />
+              <h3 className="text-lg font-bold">Delete Route?</h3>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to delete route <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{routeToDelete.routeId}</span>? This action cannot be undone and will immediately affect routing.
+            </p>
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  if (deleteConfirmId) {
+                    handleDeleteRoute(deleteConfirmId)
+                    setDeleteConfirmId(null)
+                  }
+                }}
+              >
+                Delete
+              </Button>
             </div>
           </div>
-        )
-      })()}
+        </div>
+      )}
     </div>
   )
 }

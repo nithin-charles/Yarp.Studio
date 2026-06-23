@@ -35,6 +35,9 @@ export const ClusterManagerTab: React.FC = () => {
   // Destination helper array to hold key-value pairs while editing
   const [destinationInputs, setDestinationInputs] = useState<{ id: string; name: string; address: string }[]>([])
 
+  const clusterToDelete = deleteConfirmId ? clusters.find(c => c._localId === deleteConfirmId) : null
+  const affectedRoutes = clusterToDelete ? routes.filter(r => r.clusterId === clusterToDelete.clusterId) : []
+
   // --- Cluster Handlers ---
   const handleAddCluster = () => {
     const tempId = `cluster-${Date.now().toString().slice(-4)}`
@@ -98,6 +101,10 @@ export const ClusterManagerTab: React.FC = () => {
   }
 
   const handleDeleteCluster = (localId: string) => {
+    const clusterToDelete = clusters.find(c => c._localId === localId)
+    if (clusterToDelete) {
+      setRoutes(routes.filter(r => r.clusterId !== clusterToDelete.clusterId))
+    }
     setClusters(clusters.filter(c => c._localId !== localId))
     if (editingClusterLocalId === localId) {
       setEditingClusterLocalId(null)
@@ -478,55 +485,51 @@ export const ClusterManagerTab: React.FC = () => {
         </div>
       )}
 
-      {deleteConfirmId && (() => {
-        const clusterToDelete = clusters.find(c => c._localId === deleteConfirmId)
-        const affectedRoutes = routes.filter(r => r.clusterId === clusterToDelete?.clusterId)
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center space-x-3 text-red-600 dark:text-red-400">
-                <AlertTriangle className="h-6 w-6 shrink-0" />
-                <h3 className="text-lg font-bold">Delete Cluster?</h3>
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Are you sure you want to delete cluster <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{clusterToDelete?.clusterId}</span>? This action cannot be undone and will immediately affect routing.
-              </p>
-              {affectedRoutes.length > 0 && (
-                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 p-3 rounded-md text-amber-800 dark:text-amber-400 text-xs space-y-1.5">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span>Warning: Route targets affected</span>
-                  </div>
-                  <p>
-                    Deleting this cluster will leave the following route(s) without a valid target cluster:
-                  </p>
-                  <ul className="list-disc list-inside font-mono text-[10px] pl-1 font-bold">
-                    {affectedRoutes.map(r => (
-                      <li key={r._localId}>{r.routeId}</li>
-                    ))}
-                  </ul>
+      {deleteConfirmId && clusterToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center space-x-3 text-red-600 dark:text-red-400">
+              <AlertTriangle className="h-6 w-6 shrink-0" />
+              <h3 className="text-lg font-bold">Delete Cluster?</h3>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to delete cluster <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{clusterToDelete.clusterId}</span>? This action cannot be undone and will immediately affect routing.
+            </p>
+            {affectedRoutes.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 p-3 rounded-md text-amber-800 dark:text-amber-400 text-xs space-y-1.5">
+                <div className="font-bold flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Warning: Route targets affected</span>
                 </div>
-              )}
-              <div className="flex justify-end space-x-2 pt-2">
-                <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
-                  Cancel
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => {
-                    if (deleteConfirmId) {
-                      handleDeleteCluster(deleteConfirmId)
-                      setDeleteConfirmId(null)
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
+                <p>
+                  Deleting this cluster will also delete the following route(s) targeting it to maintain configuration validity:
+                </p>
+                <ul className="list-disc list-inside font-mono text-[10px] pl-1 font-bold">
+                  {affectedRoutes.map(r => (
+                    <li key={r._localId}>{r.routeId}</li>
+                  ))}
+                </ul>
               </div>
+            )}
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  if (deleteConfirmId) {
+                    handleDeleteCluster(deleteConfirmId)
+                    setDeleteConfirmId(null)
+                  }
+                }}
+              >
+                Delete
+              </Button>
             </div>
           </div>
-        )
-      })()}
+        </div>
+      )}
     </div>
   )
 }
