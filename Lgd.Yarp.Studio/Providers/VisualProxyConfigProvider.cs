@@ -1,8 +1,8 @@
 using LiteDB;
-using Yarp.ReverseProxy.Configuration;
-using Yarp.Studio.Core.Storage;
+using global::Yarp.ReverseProxy.Configuration;
+using Lgd.Yarp.Studio.Storage;
 
-namespace Yarp.Studio.Core.Providers;
+namespace Lgd.Yarp.Studio.Providers;
 
 public class VisualProxyConfigProvider : IProxyConfigProvider
 {

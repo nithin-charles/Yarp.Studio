@@ -1,0 +1,26 @@
+# Auto-detect text files and perform LF normalization
+* text=auto
+
+# C# Source Files
+*.cs text diff=csharp
+
+# MSBuild / XML Files
+*.csproj text
+*.slnx text
+*.xml text
+*.config text
+
+# Web / Frontend Files
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.css text
+*.html text
+
+# Documentation
+*.md text
+LICENSE text
+.gitignore text
+.gitattributes text

@@ -1,4 +1,4 @@
-namespace Yarp.Studio.Core.Storage;
+namespace Lgd.Yarp.Studio.Storage;
 
 public static class DatabasePathResolver
 {

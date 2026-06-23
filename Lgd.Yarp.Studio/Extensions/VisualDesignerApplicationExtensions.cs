@@ -1,4 +1,4 @@
-namespace Yarp.Studio.Core.Extensions;
+namespace Lgd.Yarp.Studio.Extensions;
 
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Yarp.ReverseProxy.Configuration;
-using Yarp.Studio.Core.Providers;
+using global::Yarp.ReverseProxy.Configuration;
+using Lgd.Yarp.Studio.Providers;
 
 public static class VisualDesignerApplicationExtensions
 {
@@ -24,6 +24,22 @@ public static class VisualDesignerApplicationExtensions
     {
         var baseRoute = routePrefix.Trim('/');
         var env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>();
+        var devServerUrl = "http://localhost:5173";
+        var isDevRunning = env.IsDevelopment() && IsSpaDevelopmentServerRunning(devServerUrl);
+
+        if (!isDevRunning)
+        {
+            // NUGET PRODUCTION MODE: Read static elements compiled inside your shipping DLL 
+            // Register UseStaticFiles BEFORE UseRouting so it can intercept static resource requests
+            var assembly = Assembly.GetExecutingAssembly();
+            var embeddedProvider = new EmbeddedFileProvider(assembly, "Lgd.Yarp.Studio.UI");
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = embeddedProvider,
+                RequestPath = new PathString($"/{baseRoute}")
+            });
+        }
 
         app.UseRouting();
 
@@ -37,7 +53,7 @@ public static class VisualDesignerApplicationExtensions
             });
 
             endpoints.MapPost($"/{baseRoute}/api/save-config",
-                async (VisualProxyConfigProvider provider, Yarp.ReverseProxy.Configuration.IConfigValidator validator, YarpConfigPayload payload) =>
+                async (VisualProxyConfigProvider provider, global::Yarp.ReverseProxy.Configuration.IConfigValidator validator, YarpConfigPayload payload) =>
                 {
                     if (payload == null) return Results.BadRequest(new { message = "Malformed payload." });
 
@@ -85,7 +101,7 @@ public static class VisualDesignerApplicationExtensions
                     return Results.Ok(new { success = true, message = "Proxy hot-reload executed successfully!" });
                 });
 
-            endpoints.MapGet($"/{baseRoute}/api/status", (Yarp.ReverseProxy.IProxyStateLookup lookup) =>
+            endpoints.MapGet($"/{baseRoute}/api/status", (global::Yarp.ReverseProxy.IProxyStateLookup lookup) =>
             {
                 var clusters = lookup.GetClusters();
                 var status = clusters.Select(c => new
@@ -97,8 +113,8 @@ public static class VisualDesignerApplicationExtensions
                         Address = d.Value.Model?.Config?.Address ?? "",
                         HealthActive = d.Value.Health.Active.ToString(),
                         HealthPassive = d.Value.Health.Passive.ToString(),
-                        IsHealthy = d.Value.Health.Active != Yarp.ReverseProxy.Model.DestinationHealth.Unhealthy &&
-                                    d.Value.Health.Passive != Yarp.ReverseProxy.Model.DestinationHealth.Unhealthy
+                        IsHealthy = d.Value.Health.Active != global::Yarp.ReverseProxy.Model.DestinationHealth.Unhealthy &&
+                                    d.Value.Health.Passive != global::Yarp.ReverseProxy.Model.DestinationHealth.Unhealthy
                     }).ToList()
                 }).ToList();
                 return Results.Ok(status);
@@ -106,8 +122,7 @@ public static class VisualDesignerApplicationExtensions
         });
 
         // 2. Conditional UI Asset Handling (The Core One-Time Setup logic)
-        var devServerUrl = "http://localhost:5173";
-        if (env.IsDevelopment() && IsSpaDevelopmentServerRunning(devServerUrl))
+        if (isDevRunning)
         {
             // APPROACH B: In Local Development mode, dynamically forward static request routing
             // straight to your active running Vite dev environment server (typically on port 5173).
@@ -121,13 +136,7 @@ public static class VisualDesignerApplicationExtensions
         {
             // NUGET PRODUCTION MODE: Read static elements compiled inside your shipping DLL 
             var assembly = Assembly.GetExecutingAssembly();
-            var embeddedProvider = new EmbeddedFileProvider(assembly, "Yarp.Studio.UI");
-
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = embeddedProvider,
-                RequestPath = new PathString($"/{baseRoute}")
-            });
+            var embeddedProvider = new EmbeddedFileProvider(assembly, "Lgd.Yarp.Studio.UI");
 
             app.UseEndpoints(endpoints =>
             {

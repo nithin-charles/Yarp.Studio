@@ -6,7 +6,7 @@ A modern, visual administrative dashboard and designer for **YARP (Yet Another R
 
 ## 🏗️ Architecture Overview
 
-YARP Studio is split into a **backend library** (`Yarp.Studio.Core`), a **playground/gateway integration host** (`Playground.Gateway`), and a **frontend UI dashboard** (`yarp-studio-ui`).
+YARP Studio is split into a **backend library** (`Lgd.Yarp.Studio`), a **playground/gateway integration host** (`Playground.Gateway`), and a **frontend UI dashboard** (`yarp-studio-ui`).
 
 ```mermaid
 graph TD
@@ -23,7 +23,7 @@ graph TD
     YARP <--> |Proxies Traffic| Downstream[Downstream Services]
 ```
 
-### 1. Backend: .NET Core Engine (`Yarp.Studio.Core`)
+### 1. Backend: .NET Core Engine (`Lgd.Yarp.Studio`)
 - **`VisualProxyConfigProvider`**: A custom implementation of YARP's `IProxyConfigProvider`. It loads configuration from LiteDB upon startup and provides hot-reload capabilities by signaling token cancellations when updates occur.
 - **`VisualMemoryConfig`**: An in-memory representation of YARP configuration (`IProxyConfig`) that gets dynamically swapped on the fly.
 - **`VisualDesignerApplicationExtensions`**: Provides ASP.NET Core middleware (`UseYarpVisualDashboard`) that:

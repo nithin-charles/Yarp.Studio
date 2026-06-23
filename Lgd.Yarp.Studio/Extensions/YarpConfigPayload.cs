@@ -1,6 +1,6 @@
-using Yarp.ReverseProxy.Configuration;
+using global::Yarp.ReverseProxy.Configuration;
 
-namespace Yarp.Studio.Core.Extensions;
+namespace Lgd.Yarp.Studio.Extensions;
 
 public class YarpConfigPayload
 {

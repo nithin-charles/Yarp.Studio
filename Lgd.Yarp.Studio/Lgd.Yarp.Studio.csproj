@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        
+        <!-- NuGet Package Properties -->
+        <PackageId>Lgd.Yarp.Studio</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Nithin Charles</Authors>
+        <Description>A modern visual administrative dashboard and designer for YARP (Yet Another Reverse Proxy)</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/nithincharles/Yarp.Studio</RepositoryUrl>
+        <PackageTags>yarp;reverseproxy;dashboard;admin;netcore</PackageTags>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="LiteDB" Version="5.0.21" />
+        <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.8" />
+        <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+    </ItemGroup>
+
+    <!-- MSBuild Targets to automate building the React frontend and copying it into the UI directory before build -->
+    <Target Name="BuildFrontend" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+        <Message Importance="high" Text="Installing UI frontend npm packages..." />
+        <Exec Command="npm install" WorkingDirectory="../yarp-studio-ui/yarp-studio-ui" />
+
+        <Message Importance="high" Text="Building React SPA frontend..." />
+        <Exec Command="npm run build" WorkingDirectory="../yarp-studio-ui/yarp-studio-ui" />
+
+        <Message Importance="high" Text="Copying compiled UI assets to Lgd.Yarp.Studio/UI for embedding..." />
+        <RemoveDir Directories="UI" />
+        <ItemGroup>
+            <DistFiles Include="../yarp-studio-ui/yarp-studio-ui/dist/**/*.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DistFiles)" DestinationFolder="UI\%(RecursiveDir)" />
+
+        <!-- Dynamically include the newly copied files as embedded resources -->
+        <ItemGroup>
+            <EmbeddedResource Include="UI\**\*.*" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Clean up the temporary UI directory after compilation so it doesn't pollute the git workspace -->
+    <Target Name="CleanFrontend" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+        <Message Importance="high" Text="Cleaning up temporary Lgd.Yarp.Studio/UI directory..." />
+        <RemoveDir Directories="UI" />
+    </Target>
+
+    <!-- Clean up UI directory on standard project clean -->
+    <Target Name="CleanFrontendOnClean" BeforeTargets="Clean">
+        <RemoveDir Directories="UI" />
+    </Target>
+
+</Project>

@@ -1,7 +1,7 @@
 using LiteDB;
-using Yarp.ReverseProxy.Configuration;
+using global::Yarp.ReverseProxy.Configuration;
 
-namespace Yarp.Studio.Core.Storage;
+namespace Lgd.Yarp.Studio.Storage;
 
 public class YarpConfigWrapper
 {

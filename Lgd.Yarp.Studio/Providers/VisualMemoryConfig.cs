@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Primitives;
-using Yarp.ReverseProxy.Configuration;
+using global::Yarp.ReverseProxy.Configuration;
 
-namespace Yarp.Studio.Core.Providers;
+namespace Lgd.Yarp.Studio.Providers;
 
 public class VisualMemoryConfig : IProxyConfig
 {

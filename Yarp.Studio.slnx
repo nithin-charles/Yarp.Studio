@@ -3,7 +3,7 @@
     <Project Path="Playground.Gateway/Playground.Gateway.csproj" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="Yarp.Studio.Core/Yarp.Studio.Core.csproj" />
+    <Project Path="Lgd.Yarp.Studio/Lgd.Yarp.Studio.csproj" />
   </Folder>
   <Folder Name="/src/yarp-studio-ui/" />
 </Solution>
